@@ -38,6 +38,10 @@ func Wrap(err error) error {
 	buff := make([]byte, traceLen)
 	len := runtime.Stack(buff, false)
 
+	for len > 0 && buff[len-1] == '\n' {
+		len--
+	}
+
 	return &Tracer{err, string(buff[:len])}
 }
 
@@ -48,7 +52,7 @@ func (err Error) Error() string {
 }
 
 // 引数から 1 つの文字列をつくって最初のエラーにして、それを Wrap して返す。
-// 文字列の成形は fmt.Sprint() 形式。
+// 文字列の成形は fmt.Print() 形式。
 func New(a ...interface{}) error {
 	return Wrap(Error(fmt.Sprint(a...)))
 }
