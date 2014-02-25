@@ -21,7 +21,7 @@ const (
 )
 
 func IsExist(path string) (bool, error) {
-	_, err := os.Stat(path)
+	_, err := os.Lstat(path) // リンクも検知する。
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
