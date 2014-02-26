@@ -21,6 +21,7 @@ type Level int
 const (
 	ERR Level = iota + 1
 	INFO
+	WARN
 	DEBUG
 )
 
@@ -30,6 +31,8 @@ func (level Level) String() string {
 		return "ERR"
 	case INFO:
 		return "INFO"
+	case WARN:
+		return "WARN"
 	case DEBUG:
 		return "DEBUG"
 	default:
@@ -145,6 +148,39 @@ func Info(v ...interface{}) {
 	logging(INFO, v...)
 }
 
+func Warn(v ...interface{}) {
+	logging(WARN, v...)
+}
+
 func Debug(v ...interface{}) {
 	logging(DEBUG, v...)
+}
+
+// Loggerのインターフェース
+type Logger interface {
+	Err(v ...interface{})
+	Warn(v ...interface{})
+	Info(v ...interface{})
+	Debug(v ...interface{})
+}
+
+type SimpleLogger struct {
+}
+
+func (logger SimpleLogger) Err(v ...interface{}) {
+	Err(v)
+}
+func (logger SimpleLogger) Warn(v ...interface{}) {
+	Warn(v)
+}
+func (logger SimpleLogger) Info(v ...interface{}) {
+	Info(v)
+}
+func (logger SimpleLogger) Debug(v ...interface{}) {
+	Debug(v)
+}
+
+func GetLogger(name string) Logger {
+	// TODO 今はただLoggerを返すだけ
+	return &SimpleLogger{}
 }
