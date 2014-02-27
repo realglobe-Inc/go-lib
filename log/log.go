@@ -181,6 +181,45 @@ func (logger SimpleLogger) Debug(v ...interface{}) {
 }
 
 func GetLogger(name string) Logger {
-	// TODO 今はただLoggerを返すだけ
-	return &SimpleLogger{}
+	lf := GetLoggerRegistroy()
+	return lf.GetLogger(name)
+}
+
+// Loggerを管理するRegistory
+type LoggerRegistroy interface {
+	// 指定した名前のLoggerを取得する。
+	GetLogger(name string) Logger
+	// Loggerを追加する。
+	AddLogger(name string, factory func()Logger)
+}
+
+// LoggerRegistoryの実体
+type loggerRegistroy map[string]Logger
+
+// loggerRegistoryのシングルトンインスタンス
+var _loggerRegistroy = createLoggerRegistory()
+
+// LoggerRegistroyの初期化
+func createLoggerRegistory() loggerRegistroy {
+	lr := loggerRegistroy{}
+	// TODO ひとまず
+	lr.AddLogger("default", func() Logger {
+		return &SimpleLogger{}
+	})
+	return lr
+}
+
+// loggerRegistoryの実装
+func (lg loggerRegistroy) GetLogger(name string) Logger {
+	return lg[name]
+}
+
+// loggerRegistoryの実装
+func (lg loggerRegistroy) AddLogger(name string, factory func()Logger) {
+	lg[name] = factory()
+}
+
+// LoggerRegistoryを取得する
+func GetLoggerRegistroy() LoggerRegistroy {
+	return _loggerRegistroy
 }
