@@ -16,6 +16,64 @@ import (
 func TestLog(t *testing.T) {
 	rootLabel := "github.com/realglobe-Inc/go-lib-rg"
 
+	loop := 100
+
+	rootLog := GetLogger(rootLabel)
+	rootLog.SetLevel(level.DEBUG)
+	rootLog.SetUseParent(false)
+
+	hndl := handler.NewConsoleHandler()
+	hndl.SetLevel(level.INFO)
+	rootLog.AddHandler(hndl)
+
+	path := filepath.Join(os.TempDir(), "log_test.go.log")
+	if e := os.Remove(path); e != nil {
+		if !os.IsNotExist(e) {
+			t.Fatal(e)
+		}
+	}
+	hndl, err := handler.NewFileHandler(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hndl.SetLevel(level.DEBUG)
+	rootLog.AddHandler(hndl)
+
+	start := time.Now()
+
+	for i := 0; i < loop; i++ {
+		GetLogger(rootLabel + "/" + strconv.Itoa(i)).Info(i)
+	}
+
+	// 遅過ぎ検知。
+	// 1 回 100 マイクロ秒も掛かってるのは遅い。
+	limit := start.Add(time.Duration(int64(loop*100) * int64(time.Microsecond)))
+	if time.Now().After(limit) {
+		t.Error("Too slow")
+	}
+
+	Flush()
+
+	// ファイルに書き込めているかどうか検査。
+	buff, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(buff) > 0 && buff[len(buff)-1] == '\n' { // 最後の空行は抜かしとく。
+		buff = buff[:len(buff)-1]
+	}
+
+	lines := strings.Split(string(buff), "\n")
+	if len(lines) != loop {
+		t.Error(len(lines), loop)
+	}
+
+}
+
+func TestConcurrent(t *testing.T) {
+	rootLabel := "github.com/realglobe-Inc/go-lib-rg"
+
 	n := 100
 	loop := 1000
 
@@ -69,8 +127,8 @@ func TestLog(t *testing.T) {
 	}()
 
 	// 遅過ぎ検知。
-	// 1 回 0.1 ミリ秒も掛かってるのは遅い。
-	limit := start.Add(time.Duration(n * loop * int(time.Millisecond) / 10))
+	// 1 回 100 マイクロ秒も掛かってるのは遅い。
+	limit := start.Add(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
 	for time.Now().Before(limit) {
 		lock.Lock()
 		flag := end
