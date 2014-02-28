@@ -19,7 +19,7 @@ import (
 func main() {
 	...
 	// 使用する一番上の Logger を取得。
-	log := rglog.GetLogger("github.com/realglobe-Inc/daiku")
+	log := rglog.GetLogger("github.com/realglobe-Inc")
 	defer rglog.Flush()
 
 	// これ以上は登らないことを明示。
@@ -75,4 +75,4 @@ func Function() {
 }
 ```
 
-標準とは違う動作や追加動作をさせたい場合は、取得したロガーに AddHandler やら SetLevel やら SetUseParent やらで。
+標準とは異なる動作や追加動作をさせたい場合は、取得したロガーに AddHandler やら SetLevel やら SetUseParent やらで。
