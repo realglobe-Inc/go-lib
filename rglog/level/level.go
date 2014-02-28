@@ -5,7 +5,7 @@ import ()
 type Level int
 
 const (
-	// 初期値 (0) なら何も出力しない。
+	// 表示設定値が初期値の 0 なら何も出力しないことになる。
 	ERR Level = iota + 1
 	WARN
 	INFO
