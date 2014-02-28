@@ -30,3 +30,14 @@ func GetLogger(name string) Logger {
 func Flush() {
 	locklog.Flush()
 }
+
+// 標準を設定。
+func init() {
+	log := GetLogger("")
+	log.SetLevel(level.INFO)
+	log.SetUseParent(false)
+
+	hndl := handler.NewConsoleHandler()
+	hndl.SetLevel(level.INFO)
+	log.AddHandler(hndl)
+}
