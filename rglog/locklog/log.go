@@ -18,52 +18,52 @@ type logger struct {
 	useParent bool
 }
 
-func (logg *logger) AddHandler(hndl handler.Handler) {
-	logg.Lock()
-	defer logg.Unlock()
+func (log *logger) AddHandler(hndl handler.Handler) {
+	log.Lock()
+	defer log.Unlock()
 
-	logg.hndls[hndl] = true
+	log.hndls[hndl] = true
 }
 
-func (logg *logger) RemoveHandler(hndl handler.Handler) {
-	logg.Lock()
-	defer logg.Unlock()
+func (log *logger) RemoveHandler(hndl handler.Handler) {
+	log.Lock()
+	defer log.Unlock()
 
-	delete(logg.hndls, hndl)
+	delete(log.hndls, hndl)
 }
 
-func (logg *logger) SetLevel(lv level.Level) {
-	logg.Lock()
-	defer logg.Unlock()
+func (log *logger) SetLevel(lv level.Level) {
+	log.Lock()
+	defer log.Unlock()
 
-	logg.Level = lv
+	log.Level = lv
 }
 
-func (logg *logger) SetUseParent(useParent bool) {
-	logg.Lock()
-	defer logg.Unlock()
+func (log *logger) SetUseParent(useParent bool) {
+	log.Lock()
+	defer log.Unlock()
 
-	logg.useParent = useParent
+	log.useParent = useParent
 }
 
-func (logg *logger) Err(v ...interface{}) {
-	logg.logging(level.ERR, v...)
+func (log *logger) Err(v ...interface{}) {
+	log.logging(level.ERR, v...)
 }
 
-func (logg *logger) Warn(v ...interface{}) {
-	logg.logging(level.WARN, v...)
+func (log *logger) Warn(v ...interface{}) {
+	log.logging(level.WARN, v...)
 }
 
-func (logg *logger) Info(v ...interface{}) {
-	logg.logging(level.INFO, v...)
+func (log *logger) Info(v ...interface{}) {
+	log.logging(level.INFO, v...)
 }
 
-func (logg *logger) Debug(v ...interface{}) {
-	logg.logging(level.DEBUG, v...)
+func (log *logger) Debug(v ...interface{}) {
+	log.logging(level.DEBUG, v...)
 }
 
-func (logg *logger) logging(lv level.Level, v ...interface{}) {
-	cur := logg
+func (log *logger) logging(lv level.Level, v ...interface{}) {
+	cur := log
 
 	cur.Lock()
 	for {
@@ -98,11 +98,11 @@ func (logg *logger) logging(lv level.Level, v ...interface{}) {
 	}
 }
 
-func (logg *logger) flush() {
-	logg.Lock()
-	defer logg.Unlock()
+func (log *logger) flush() {
+	log.Lock()
+	defer log.Unlock()
 
-	for hndl, _ := range logg.hndls {
+	for hndl, _ := range log.hndls {
 		hndl.Flush()
 	}
 }
@@ -142,27 +142,27 @@ func Logger(name string) *logger {
 	lock.Lock()
 	defer lock.Unlock()
 
-	logg := loggers[name]
-	if logg == nil {
-		logg = &logger{name: name, useParent: true, hndls: make(map[handler.Handler]bool)}
-		loggers[name] = logg
+	log := loggers[name]
+	if log == nil {
+		log = &logger{name: name, useParent: true, hndls: make(map[handler.Handler]bool)}
+		loggers[name] = log
 	}
 
-	return logg
+	return log
 }
 
 func Flush() {
 	// デッドロックしないようにマップをさらってるときに logger 自体の処理はしない。
 	lock.Lock()
 
-	loggs := []*logger{}
-	for _, logg := range loggers {
-		loggs = append(loggs, logg)
+	logs := []*logger{}
+	for _, log := range loggers {
+		logs = append(logs, log)
 	}
 
 	lock.Unlock()
 
-	for _, logg := range loggs {
-		logg.flush()
+	for _, log := range logs {
+		log.flush()
 	}
 }

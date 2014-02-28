@@ -12,7 +12,7 @@ type Logger interface {
 	RemoveHandler(hndl handler.Handler)
 
 	SetLevel(lv level.Level)
-	SetUseParent(use bool) // Logger に渡す name が / で区切られた木構造を表すとして、親にも処理させるかどうか。
+	SetUseParent(use bool) // GetLogger に渡す name が / で区切られた木構造を表すとして、親にも処理させるかどうか。
 
 	Err(v ...interface{})
 	Warn(v ...interface{})
