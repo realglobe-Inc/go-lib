@@ -3,11 +3,17 @@ package ip
 import (
 	"github.com/realglobe-Inc/go-lib-rg/erro"
 	ipmath "github.com/realglobe-Inc/go-lib-rg/ip"
-	"github.com/realglobe-Inc/go-lib-rg/log"
+	"github.com/realglobe-Inc/go-lib-rg/rglog"
 	"net"
 	"os/user"
 	"strconv"
 )
+
+var log rglog.Logger
+
+func init() {
+	log = rglog.GetLogger("github.com/realglobe-Inc/go-lib-rg/c4sa/ip")
+}
 
 // コンテナと IP アドレスの対応。
 // コンテナ名と同じユーザーがシステムに存在するとして、IP アドレスの始点にその uid を足してコンテナの IP アドレスとする。

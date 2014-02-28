@@ -2,10 +2,16 @@ package lock
 
 import (
 	"github.com/realglobe-Inc/go-lib-rg/erro"
-	"github.com/realglobe-Inc/go-lib-rg/log"
+	"github.com/realglobe-Inc/go-lib-rg/rglog"
 	"os"
 	"syscall"
 )
+
+var log rglog.Logger
+
+func init() {
+	log = rglog.GetLogger("github.com/realglobe-Inc/go-lib-rg/lock")
+}
 
 // ロックファイル式のロック。
 
