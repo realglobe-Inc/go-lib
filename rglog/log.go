@@ -10,6 +10,7 @@ import (
 type Logger interface {
 	AddHandler(hndl handler.Handler)
 	RemoveHandler(hndl handler.Handler)
+	Handlers() []handler.Handler
 
 	SetLevel(lv level.Level)
 	SetUseParent(use bool) // GetLogger に渡す name が / で区切られた木構造を表すとして、親にも処理させるかどうか。

@@ -32,6 +32,18 @@ func (log *logger) RemoveHandler(hndl handler.Handler) {
 	delete(log.hndls, hndl)
 }
 
+func (log *logger) Handlers() []handler.Handler {
+	log.Lock()
+	defer log.Unlock()
+
+	hndls := []handler.Handler{}
+	for hndl, _ := range log.hndls {
+		hndls = append(hndls, hndl)
+	}
+
+	return hndls
+}
+
 func (log *logger) SetLevel(lv level.Level) {
 	log.Lock()
 	defer log.Unlock()
