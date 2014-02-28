@@ -6,42 +6,39 @@ rglog
 使い方
 ----------
 
-必要なパッケージインポートする。
-```
-import (
-	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
-	"github.com/realglobe-Inc/go-lib-rg/rglog"
-)
-```
-
 プログラム実行のはじめのうちに標準動作を設定をする。
 ```
+import (
+	...
+	"github.com/realglobe-Inc/go-lib-rg/rglog"
+	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
+	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	...
+)
+...
 func main() {
 	...
-
 	// 使用する一番上の Logger を取得。
 	log := rglog.GetLogger("github.com/realglobe-Inc/daiku")
 	defer rglog.Flush()
 
 	// これ以上は登らないことを明示。
 	log.SetUseParent(false)
-	// 表示できるレベルを設定。
+	// 使用できるレベルを設定。
 	log.SetLevel(level.DEBUG)
 
-	// INFO 以上を画面に表示する。
+	// 画面に INFO 以上を表示する。
 	hndl := handler.NewConsoleHandler()
 	hndl.SetLevel(level.INFO)
 	log.AddHandler(hndl)
 
-	// 全てをファイルに出力する。
+	// ファイルに全てを出力する。
 	hndl, err := handler.NewFileHandler(logPath)
 	if err != nil {
 		os.Exit(1)
 	}
 	hndl.SetLevel(level.DEBUG)
 	log.AddHandler(hndl)
-
 	...
 }
 ```
@@ -50,6 +47,12 @@ func main() {
 
 使用したいところで、標準以下の Logger を取得して使う。
 ```
+import (
+	...
+	"github.com/realglobe-Inc/go-lib-rg/rglog"
+	...
+)
+...
 func Function() {
 	...
 	rglog.GetLogger("github.com/realglobe-Inc/daiku/change").Info("Logging message.")
