@@ -18,7 +18,8 @@ func (formatter simpleFormatter) Format(date time.Time, file string, line int, l
 	hour, min, sec := date.Clock()
 	microSec := date.Nanosecond() / 1000
 
-	msg := fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d.%06d %v %s:%d ", year, int(month), day, hour, min, sec, microSec, lv, file, line) +
+	// Level は固定幅で左寄せ。見た目はいいけど cut では後ろが分けられない。
+	msg := fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d.%06d %-5v %s:%d ", year, int(month), day, hour, min, sec, microSec, lv, file, line) +
 		fmt.Sprint(v...) +
 		"\n"
 
