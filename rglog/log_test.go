@@ -16,7 +16,8 @@ import (
 func TestLog(t *testing.T) {
 	rootLabel := "github.com/realglobe-Inc/go-lib-rg"
 
-	loop := 100
+	loop := 100000
+	n := 100
 
 	rootLog := GetLogger(rootLabel)
 	rootLog.SetLevel(level.DEBUG)
@@ -40,16 +41,18 @@ func TestLog(t *testing.T) {
 	rootLog.AddHandler(hndl)
 
 	start := time.Now()
-
 	for i := 0; i < loop; i++ {
-		GetLogger(rootLabel + "/" + strconv.Itoa(i)).Info(i)
+		GetLogger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
 	}
+	end := time.Now()
 
 	// 遅過ぎ検知。
 	// 1 回 100 マイクロ秒も掛かってるのは遅い。
 	limit := start.Add(time.Duration(int64(loop*100) * int64(time.Microsecond)))
-	if time.Now().After(limit) {
-		t.Error("Too slow")
+	if end.After(limit) {
+		t.Error("Too slow ", end.Sub(start))
+	} else {
+		//t.Error(end.Sub(start))
 	}
 
 	Flush()
@@ -99,9 +102,10 @@ func TestConcurrent(t *testing.T) {
 	rootLog.AddHandler(hndl)
 
 	var lock sync.Mutex
-	end := false
 
+	var zero time.Time
 	start := time.Now()
+	end := zero
 
 	c := make(chan bool)
 
@@ -122,7 +126,7 @@ func TestConcurrent(t *testing.T) {
 		}
 
 		lock.Lock()
-		end = true
+		end = time.Now()
 		lock.Unlock()
 	}()
 
@@ -131,18 +135,20 @@ func TestConcurrent(t *testing.T) {
 	limit := start.Add(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
 	for time.Now().Before(limit) {
 		lock.Lock()
-		flag := end
+		curEnd := end
 		lock.Unlock()
 
-		if flag {
+		if curEnd != zero {
 			break
 		}
 
 		time.Sleep(time.Millisecond)
 	}
 
-	if !end {
-		t.Fatal("Too slow")
+	if end == zero {
+		t.Fatal("Too slow ", time.Now().Sub(start))
+	} else {
+		//t.Error(end.Sub(start))
 	}
 
 	Flush()
