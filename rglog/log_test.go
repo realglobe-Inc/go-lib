@@ -52,7 +52,7 @@ func TestLog(t *testing.T) {
 	if end.After(limit) {
 		t.Error("Too slow ", end.Sub(start))
 	} else {
-		//t.Error(end.Sub(start))
+		//t.Error("Not too slow", end.Sub(start))
 	}
 
 	Flush()
@@ -148,7 +148,7 @@ func TestConcurrent(t *testing.T) {
 	if end == zero {
 		t.Fatal("Too slow ", time.Now().Sub(start))
 	} else {
-		//t.Error(end.Sub(start))
+		//t.Error("Not too slow", end.Sub(start))
 	}
 
 	Flush()
