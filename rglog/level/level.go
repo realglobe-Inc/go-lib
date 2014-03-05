@@ -18,7 +18,7 @@ const (
 	ALL
 )
 
-var labels []string = []string{
+var lvToLabel []string = []string{
 	OFF:   "OFF",
 	ERR:   "ERR",
 	WARN:  "WARN",
@@ -27,18 +27,28 @@ var labels []string = []string{
 	ALL:   "ALL",
 }
 
-func (lv Level) String() string {
-	if int(lv) < 0 || len(labels) <= int(lv) {
-		return "UNKNOWN"
+var labelToLv map[string]Level
+
+func init() {
+	labelToLv = make(map[string]Level)
+	for lv, label := range lvToLabel {
+		labelToLv[label] = Level(lv)
 	}
-	return labels[lv]
 }
 
-func ValueOf(str string) (Level, error) {
-	for lv, label := range labels {
-		if str == label {
-			return Level(lv), nil
-		}
+func (lv Level) String() string {
+	val := int(lv)
+	if val < 0 || len(lvToLabel) <= val {
+		return "UNKNOWN"
 	}
-	return 0, erro.New("level '", str, "' is not exist.")
+	return lvToLabel[val]
+}
+
+func ValueOf(label string) (Level, error) {
+	lv, ok := labelToLv[label]
+	if ok {
+		return lv, nil
+	} else {
+		return 0, erro.New("level '", label, "' is not exist.")
+	}
 }
