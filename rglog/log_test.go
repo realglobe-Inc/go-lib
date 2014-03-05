@@ -20,12 +20,8 @@ func TestLog(t *testing.T) {
 	n := 100
 
 	rootLog := GetLogger(rootLabel)
-	rootLog.SetLevel(level.DEBUG)
+	rootLog.SetLevel(level.ALL)
 	rootLog.SetUseParent(false)
-
-	hndl := handler.NewConsoleHandler()
-	hndl.SetLevel(level.INFO)
-	rootLog.AddHandler(hndl)
 
 	path := filepath.Join(os.TempDir(), "log_test.go.log")
 	if e := os.Remove(path); e != nil {
@@ -33,10 +29,7 @@ func TestLog(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
-	hndl, err := handler.NewFileHandler(path)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
@@ -81,12 +74,8 @@ func TestConcurrent(t *testing.T) {
 	loop := 1000
 
 	rootLog := GetLogger(rootLabel)
-	rootLog.SetLevel(level.DEBUG)
+	rootLog.SetLevel(level.ALL)
 	rootLog.SetUseParent(false)
-
-	hndl := handler.NewConsoleHandler()
-	hndl.SetLevel(level.INFO)
-	rootLog.AddHandler(hndl)
 
 	path := filepath.Join(os.TempDir(), "log_test.go.log")
 	if e := os.Remove(path); e != nil {
@@ -94,10 +83,7 @@ func TestConcurrent(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
-	hndl, err := handler.NewFileHandler(path)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
