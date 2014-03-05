@@ -22,21 +22,18 @@ func main() {
 	log := rglog.GetLogger("github.com/realglobe-Inc")
 	defer rglog.Flush()
 
-	// これ以上は登らないことを明示。
+	// これより上には遡らない。
 	log.SetUseParent(false)
 	// 使用できるレベルを設定。
-	log.SetLevel(level.DEBUG)
+	log.SetLevel(level.ALL)
 
 	// 画面に INFO 以上を表示する。
 	hndl := handler.NewConsoleHandler()
 	hndl.SetLevel(level.INFO)
 	log.AddHandler(hndl)
 
-	// ファイルに全てを出力する。
-	hndl, err := handler.NewFileHandler(logPath)
-	if err != nil {
-		os.Exit(1)
-	}
+	// 10MB、10 個までのファイルにデバッグ情報を出力する。
+	hndl := handler.NewRotateHandler(logPath, 10*(1<<20), 10)
 	hndl.SetLevel(level.DEBUG)
 	log.AddHandler(hndl)
 	...
@@ -75,4 +72,5 @@ func Function() {
 }
 ```
 
-標準とは異なる動作や追加動作をさせたい場合は、取得したロガーに AddHandler やら SetLevel やら SetUseParent やらで。
+標準とは異なる動作をさせたいときは、取得したロガーで SetUseParent(false) して AddHandler やら SetLevel やらで。
+動作の追加なら、SetUseParent(false) しないで AddHandler やら SetLevel やらで。
