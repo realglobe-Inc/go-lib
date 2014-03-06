@@ -98,7 +98,7 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 			if err != nil {
 				fmt.Fprintln(os.Stderr, erro.Wrap(err))
 				errCount++
-				break
+				continue
 			}
 
 			fi, err := file.Stat()
@@ -106,7 +106,7 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 				fmt.Fprintln(os.Stderr, erro.Wrap(err))
 				errCount++
 				file.Close()
-				break
+				continue
 			}
 
 			size := fi.Size()
@@ -140,13 +140,13 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 				fmt.Fprintln(os.Stderr, erro.Wrap(e))
 				errCount++
 				file.Close()
-				break
+				continue
 			}
 
 			if e := file.Close(); e != nil {
 				fmt.Fprintln(os.Stderr, erro.Wrap(e))
 				errCount++
-				break
+				continue
 			}
 
 			if size < limit { // ログを取ってるときに異常が発生してた。
@@ -158,7 +158,7 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 			if e := rotateFile(path, num); e != nil {
 				fmt.Fprintln(os.Stderr, erro.Wrap(e))
 				errCount++
-				break
+				continue
 			}
 
 			errCount = 0
