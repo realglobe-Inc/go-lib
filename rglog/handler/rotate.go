@@ -20,7 +20,13 @@ type FormatEntry struct {
 	Args []interface{}
 }
 
-var FlushSignal = &FormatEntry{}
+// てきとうなポインタを Flush のトリガにする。
+// ポインタ自体で判断するので、中身を保護する必要は無い。
+var flushTrigger = &FormatEntry{}
+
+func FlushTrigger() *FormatEntry {
+	return flushTrigger
+}
 
 type goHandler struct {
 	sync.Mutex
@@ -58,7 +64,7 @@ func (hndl *goHandler) SetLevel(lv level.Level) {
 }
 
 func (hndl *goHandler) Flush() {
-	hndl.queue <- FlushSignal
+	hndl.queue <- FlushTrigger()
 	<-hndl.done
 }
 
@@ -107,10 +113,10 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 			writer := bufio.NewWriter(file)
 
 			// ログを取る。
-			for size <= limit {
+			for size <= limit { // 最大 1 エントリ分はみ出す。でも、limit == 0 でも動く。
 				ent := <-queue
 
-				if ent == FlushSignal {
+				if ent == FlushTrigger() {
 					err := writer.Flush()
 					done <- (err == nil) // デッドロック防止のため、先に返す。
 					if err != nil {
@@ -161,7 +167,7 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 		// 異常でループを抜けたら、デッドロック防止処理だけする。
 		for {
 			ent := <-queue
-			if ent == FlushSignal {
+			if ent == FlushTrigger() {
 				done <- false
 			}
 		}
@@ -183,7 +189,7 @@ func rotateFile(path string, num int) error {
 	}
 	n--
 
-	// 今の .{n} が残す中で一番最後。
+	// .{n} が残す中で一番最後。
 
 	// .{i} を .{i+1} に。
 	for ; n > 0; n-- {
