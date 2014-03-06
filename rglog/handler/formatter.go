@@ -22,7 +22,7 @@ func (formatter simpleFormatter) Format(date time.Time, file string, line int, l
 	hour, min, sec := date.Clock()
 	microSec := date.Nanosecond() / 1000
 
-	if strings.HasPrefix(file, uselessPrefix) { // 違う環境でコンパイルした後、リンクすることは可能だと思うので。
+	if uselessPrefix != "" && strings.HasPrefix(file, uselessPrefix) { // 違う環境でコンパイルした後、リンクすることは可能だと思うので。
 		file = file[len(uselessPrefix):]
 	} else {
 		// /src/ の前までを GOPATH とみなす。
