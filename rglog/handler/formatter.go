@@ -14,8 +14,9 @@ type Formatter interface {
 	Format(date time.Time, file string, line int, lv level.Level, v ...interface{}) []byte
 }
 
-type simpleFormatter struct {
-}
+type simpleFormatter struct{}
+
+var SimpleFormatter = &simpleFormatter{}
 
 func (formatter simpleFormatter) Format(date time.Time, file string, line int, lv level.Level, v ...interface{}) []byte {
 	year, month, day := date.Date()
@@ -34,10 +35,9 @@ func (formatter simpleFormatter) Format(date time.Time, file string, line int, l
 		}
 	}
 
-	// Level は固定幅で左寄せ。見た目はいいけど cut では後ろが分けられない。
-	msg := fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d.%06d %-5v %s:%d ",
-		year, int(month), day, hour, min, sec, microSec, lv, file, line) +
-		fmt.Sprint(v...) + "\n"
+	// Level は最短長固定幅。
+	msg := fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d.%06d %.3v %s:%d %s\n",
+		year, int(month), day, hour, min, sec, microSec, lv, file, line, fmt.Sprint(v...))
 
 	return []byte(msg)
 }
@@ -59,4 +59,13 @@ func init() {
 	}
 
 	uselessPrefix = file[:len(file)-len(suffix)]
+}
+
+type levelOnlyFormatter struct{}
+
+var LevelOnlyFormatter = &levelOnlyFormatter{}
+
+func (formatter levelOnlyFormatter) Format(date time.Time, file string, line int, lv level.Level, v ...interface{}) []byte {
+	msg := fmt.Sprintf("[%.3v] %s\n", lv, fmt.Sprint(v...))
+	return []byte(msg)
 }
