@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/erro"
 	"github.com/realglobe-Inc/go-lib-rg/rglog"
+	"github.com/realglobe-Inc/go-lib-rg/run"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -138,6 +139,12 @@ func Copy(to, from string) error {
 	log.Debug("cp ", from, " ", to)
 
 	return nil
+}
+
+func RecursiveCopy(to, from string) error {
+	// ひどい手抜き。
+	log.Debug("TE NU KI.")
+	return erro.Wrap(run.Quiet("cp", "-r", from, to))
 }
 
 // ファイルの末尾に付け足す。
