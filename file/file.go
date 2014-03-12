@@ -183,18 +183,26 @@ func Chown(path, owner string) error {
 		return erro.Wrap(err)
 	}
 
+	return ChownById(path, int(uid))
+}
+
+func ChownById(path string, uid int) error {
+	return ChownByIdGid(path, uid, uid)
+}
+
+func ChownByIdGid(path string, uid, gid int) error {
 	if e := filepath.Walk(path, func(curPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return erro.Wrap(err)
 		}
 
-		if e := os.Chown(curPath, int(uid), int(uid)); e != nil {
+		if e := os.Chown(curPath, uid, gid); e != nil {
 			return erro.Wrap(e)
 		}
 
 		return nil
 	}); e != nil {
-		return erro.Wrap(err)
+		return erro.Wrap(e)
 	}
 
 	return nil
