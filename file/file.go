@@ -142,6 +142,10 @@ func Copy(to, from string) error {
 }
 
 func RecursiveCopy(to, from string) error {
+	if e := os.MkdirAll(filepath.Dir(to), dirPerm); e != nil {
+		return erro.Wrap(e)
+	}
+
 	// ひどい手抜き。
 	log.Debug("TE NU KI.")
 	return erro.Wrap(run.Quiet("cp", "-r", from, to))
