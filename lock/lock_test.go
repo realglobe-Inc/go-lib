@@ -1,14 +1,13 @@
 package lock
 
 import (
-	"github.com/realglobe-Inc/daiku/common"
 	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestLock(t *testing.T) {
-	file, err := ioutil.TempFile("", common.TestLabel)
+	file, err := ioutil.TempFile("", "test_lock")
 	if err != nil {
 		t.Fatal(err)
 	}

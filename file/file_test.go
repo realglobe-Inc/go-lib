@@ -1,14 +1,13 @@
 package file
 
 import (
-	"github.com/realglobe-Inc/daiku/common"
 	"io/ioutil"
 	"os"
 	"testing"
 )
 
 func TestIsExist(t *testing.T) {
-	file, err := ioutil.TempFile("", common.TestLabel)
+	file, err := ioutil.TempFile("", "test_file")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +34,7 @@ func TestCompare(t *testing.T) {
 	files := make([]*os.File, 5)
 	for i := 0; i < len(files); i++ {
 		var err error
-		files[i], err = ioutil.TempFile("", common.TestLabel)
+		files[i], err = ioutil.TempFile("", "test_file")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -78,7 +77,7 @@ func TestCopy(t *testing.T) {
 	files := make([]*os.File, 2)
 	for i := 0; i < len(files); i++ {
 		var err error
-		files[i], err = ioutil.TempFile("", common.TestLabel)
+		files[i], err = ioutil.TempFile("", "test_file")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -127,13 +126,13 @@ func TestDirList(t *testing.T) {
 }
 
 func TestIsDir(t *testing.T) {
-	file, err := ioutil.TempFile("", common.TestLabel)
+	file, err := ioutil.TempFile("", "test_file")
 	if err != nil {
 		t.Fatal(err)
 	}
 	file.Close()
 
-	dir, err := ioutil.TempDir("", common.TestLabel)
+	dir, err := ioutil.TempDir("", "test_file")
 	if err != nil {
 		t.Fatal(err)
 	}
