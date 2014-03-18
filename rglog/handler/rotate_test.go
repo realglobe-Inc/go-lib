@@ -9,6 +9,7 @@ import (
 	"testing"
 )
 
+// ローテートしてみる。
 func TestRotateHandlerRotation(t *testing.T) {
 
 	file, err := ioutil.TempFile("", "go_rotate_test")
@@ -21,6 +22,7 @@ func TestRotateHandlerRotation(t *testing.T) {
 	if e := os.Remove(file.Name()); e != nil {
 		t.Fatal(e)
 	}
+	defer os.Remove(file.Name())
 
 	path := file.Name()
 	n := 100
@@ -34,15 +36,18 @@ func TestRotateHandlerRotation(t *testing.T) {
 
 	hndl.Flush()
 
-	for i := 1; i < n; i++ {
+	for i := 1; i <= n; i++ {
 		bak := path + "." + strconv.Itoa(i)
 		if _, e := os.Stat(bak); e != nil {
 			t.Error(bak, e)
 		}
+
+		os.Remove(bak)
 	}
 
 }
 
+// 記録する。
 func TestRotateHandlerLogging(t *testing.T) {
 
 	file, err := ioutil.TempFile("", "go_rotate_test")
@@ -55,6 +60,7 @@ func TestRotateHandlerLogging(t *testing.T) {
 	if e := os.Remove(file.Name()); e != nil {
 		t.Fatal(e)
 	}
+	defer os.Remove(file.Name())
 
 	path := file.Name()
 	n := 100

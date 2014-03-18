@@ -29,6 +29,8 @@ func TestLog(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
+	defer os.Remove(path)
+
 	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
@@ -83,6 +85,8 @@ func TestConcurrent(t *testing.T) {
 			t.Fatal(e)
 		}
 	}
+	defer os.Remove(path)
+
 	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
