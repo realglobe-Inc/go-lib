@@ -13,7 +13,7 @@ type Tracer struct {
 
 func (err *Tracer) Error() string {
 	return err.cause.Error() + "\n" +
-		"--------------------------------------------------\n" +
+		//"--------------------------------------------------\n" +
 		err.trace
 }
 
