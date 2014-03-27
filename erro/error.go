@@ -45,6 +45,17 @@ func Wrap(err error) error {
 	return &Tracer{err, string(buff[:len])}
 }
 
+func Unwrap(err error) error {
+	for {
+		tr, ok := err.(*Tracer)
+		if ok {
+			err = tr.cause
+		} else {
+			return err
+		}
+	}
+}
+
 type Error string
 
 func (err Error) Error() string {

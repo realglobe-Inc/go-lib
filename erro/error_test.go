@@ -31,3 +31,19 @@ func TestWrap(t *testing.T) {
 		t.Error(tr.Cause())
 	}
 }
+
+func TestUnwrap(t *testing.T) {
+	if Unwrap(nil) != nil {
+		t.Error(nil)
+	}
+
+	msg := "aho"
+	if Unwrap(Error(msg)) != Error(msg) {
+		t.Error(msg)
+	}
+
+	err := New(msg)
+	if Unwrap(err) != Error(msg) {
+		t.Error(err)
+	}
+}
