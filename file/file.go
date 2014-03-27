@@ -50,7 +50,7 @@ func IsDir(path string) (bool, error) {
 func Size(path string) (int64, error) {
 	fi, err := os.Stat(path)
 	if err != nil {
-		return -1, erro.Wrap(err)
+		return 0, erro.Wrap(err)
 	}
 	return fi.Size(), nil
 }
@@ -169,6 +169,44 @@ func Append(path string, data []byte) error {
 	}
 
 	if _, e := writer.WriteAt(data, stat.Size()); e != nil {
+		return erro.Wrap(e)
+	}
+
+	return erro.Wrap(err)
+}
+
+// ファイルの末尾に行を付け足す。
+func AppendLines(path string, lines []string) error {
+	if e := os.MkdirAll(filepath.Dir(path), dirPerm); e != nil {
+		return erro.Wrap(e)
+	}
+
+	writer, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, filePerm)
+	if err != nil {
+		return erro.Wrap(err)
+	}
+	defer writer.Close()
+
+	stat, err := writer.Stat()
+	if err != nil {
+		return erro.Wrap(err)
+	}
+
+	buff := []byte{}
+	if stat.Size() > 1 {
+		// 改行で終わっていなければ改行する。
+		tail := make([]byte, 1)
+		if _, e := writer.ReadAt(tail, stat.Size()-1); e != nil {
+			return erro.Wrap(e)
+		} else if tail[0] != '\n' {
+			buff = append(buff, '\n')
+		}
+	}
+	for _, line := range lines {
+		buff = append(buff, []byte(fmt.Sprintln(line))...)
+	}
+
+	if _, e := writer.WriteAt(buff, stat.Size()); e != nil {
 		return erro.Wrap(e)
 	}
 
