@@ -39,6 +39,7 @@ type goHandler struct {
 func (hndl *goHandler) Output(depth int, lv level.Level, v ...interface{}) {
 	hndl.Lock()
 	if lv > hndl.lv {
+		hndl.Unlock()
 		return
 	}
 	hndl.Unlock()

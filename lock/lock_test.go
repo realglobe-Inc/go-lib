@@ -16,6 +16,10 @@ func TestLock(t *testing.T) {
 		t.Fatal(e)
 	}
 
+	if e := os.Remove(file.Name()); e != nil {
+		t.Fatal(e)
+	}
+
 	n := 10
 	loop := 1000
 
@@ -55,4 +59,34 @@ func TestLock(t *testing.T) {
 	if counter != n*loop {
 		t.Error(counter, n, loop, file.Name())
 	}
+}
+
+func TestReentrant(t *testing.T) {
+	file, err := ioutil.TempFile("", "test_lock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	if e := file.Close(); e != nil {
+		t.Fatal(e)
+	}
+
+	if e := os.Remove(file.Name()); e != nil {
+		t.Fatal(e)
+	}
+
+	lock, err := Lock(file.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lock.Unlock()
+
+	lock, err = TryLock(file.Name())
+	if err != nil {
+		t.Fatal(err)
+	} else if lock != nil {
+		defer lock.Unlock()
+		t.Error(lock)
+	}
+
 }

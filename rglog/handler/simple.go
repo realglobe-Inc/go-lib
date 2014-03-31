@@ -41,9 +41,9 @@ func (hndl *skelHandler) Output(depth int, lv level.Level, v ...interface{}) {
 		file = "???"
 		line = 0
 	}
-	hndl.Lock()
-
 	buff := hndl.formatter.Format(now, file, line, lv, v...)
+
+	hndl.Lock()
 
 	hndl.writer.Write(buff)
 }
