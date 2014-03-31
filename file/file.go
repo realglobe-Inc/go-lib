@@ -247,5 +247,7 @@ func ChownByIdGid(path string, uid, gid int) error {
 		return erro.Wrap(e)
 	}
 
+	log.Debug("chown ", uid, ":", gid, " -R ", path)
+
 	return nil
 }
