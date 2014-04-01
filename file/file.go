@@ -238,8 +238,14 @@ func ChownByIdGid(path string, uid, gid int) error {
 			return erro.Wrap(err)
 		}
 
-		if e := os.Chown(curPath, uid, gid); e != nil {
-			return erro.Wrap(e)
+		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
+			if e := os.Lchown(curPath, uid, gid); e != nil {
+				return erro.Wrap(e)
+			}
+		} else {
+			if e := os.Chown(curPath, uid, gid); e != nil {
+				return erro.Wrap(e)
+			}
 		}
 
 		return nil
