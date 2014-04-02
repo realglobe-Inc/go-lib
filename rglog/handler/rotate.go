@@ -119,11 +119,12 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 
 				if ent == FlushTrigger() {
 					err := writer.Flush()
-					done <- (err == nil) // デッドロック防止のため、先に返す。
 					if err != nil {
 						fmt.Fprintln(os.Stderr, erro.Wrap(err))
+						done <- (err == nil)
 						break
 					}
+					done <- (err == nil)
 				}
 
 				buff := formatter.Format(ent.Date, ent.File, ent.Line, ent.Lv, ent.Args...)
