@@ -69,6 +69,22 @@ func DirList(path string) []string {
 	return list
 }
 
+// ディレクトリを登る方向で列挙。
+// /a/b/c, /a/b, /a, /
+func AscentDirList(path string) []string {
+	return DirList(path)
+}
+
+// ディレクトリを下る方向で列挙。
+func DescentDirList(path string) []string {
+	buff := DirList(path)
+	list := make([]string, len(buff))
+	for i := 0; i < len(buff); i++ {
+		list[i] = buff[len(buff)-1-i]
+	}
+	return list
+}
+
 // ファイルの中身を丸ごと比較する。
 func Compare(path1, path2 string) (int, error) {
 	fi1, err := os.Stat(path1)
