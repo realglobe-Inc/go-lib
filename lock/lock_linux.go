@@ -49,11 +49,12 @@ func lock(path string, flag int) (*Locker, error) {
 
 func (lock *Locker) Unlock() error {
 	file := (*os.File)(lock)
-	err := syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
-	if err != nil {
+	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_UN); err != nil {
 		return erro.Wrap(err)
 	}
-	file.Close()
+	if err := file.Close(); err != nil {
+		return erro.Wrap(err)
+	}
 
 	log.Debug("Unlocked ", file.Name(), ".")
 	return nil
