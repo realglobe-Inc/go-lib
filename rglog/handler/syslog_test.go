@@ -6,6 +6,8 @@ import (
 )
 
 func TestSyslogHundler(t *testing.T) {
+	// ただ使えるかだけ。
+
 	hndl, err := NewSyslogHandler("go-lib-rg")
 	if err != nil {
 		t.Fatal(err)

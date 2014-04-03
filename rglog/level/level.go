@@ -52,3 +52,11 @@ func ValueOf(label string) (Level, error) {
 		return 0, erro.New("level '", label, "' is not exist.")
 	}
 }
+
+func Values() []Level {
+	values := []Level{}
+	for i := OFF; i <= ALL; i++ {
+		values = append(values, i)
+	}
+	return values
+}

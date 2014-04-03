@@ -14,24 +14,6 @@ type Formatter interface {
 	Format(date time.Time, file string, line int, lv level.Level, v ...interface{}) []byte
 }
 
-type simpleFormatter struct{}
-
-var SimpleFormatter = &simpleFormatter{}
-
-func (formatter simpleFormatter) Format(date time.Time, file string, line int, lv level.Level, v ...interface{}) []byte {
-	year, month, day := date.Date()
-	hour, min, sec := date.Clock()
-	microSec := date.Nanosecond() / 1000
-
-	file = trimPrefix(file)
-
-	// Level は最短長固定幅。
-	msg := fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d.%06d %.3v %s:%d %s\n",
-		year, int(month), day, hour, min, sec, microSec, lv, file, line, fmt.Sprint(v...))
-
-	return []byte(msg)
-}
-
 // ${GOPATH}/src/ の部分。
 var uselessPrefix string
 
@@ -67,6 +49,26 @@ func trimPrefix(file string) string {
 	return file
 }
 
+// {日時} {レベル} {ファイル名}:{行番号} {メッセージ}
+type simpleFormatter struct{}
+
+var SimpleFormatter = &simpleFormatter{}
+
+func (formatter simpleFormatter) Format(date time.Time, file string, line int, lv level.Level, v ...interface{}) []byte {
+	year, month, day := date.Date()
+	hour, min, sec := date.Clock()
+	microSec := date.Nanosecond() / 1000
+
+	file = trimPrefix(file)
+
+	// Level は最短長固定幅。
+	msg := fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d.%06d %.3v %s:%d %s\n",
+		year, int(month), day, hour, min, sec, microSec, lv, file, line, fmt.Sprint(v...))
+
+	return []byte(msg)
+}
+
+// [{レベル}] {メッセージ}
 type levelOnlyFormatter struct{}
 
 var LevelOnlyFormatter = &levelOnlyFormatter{}

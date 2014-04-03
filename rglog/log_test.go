@@ -35,19 +35,8 @@ func TestLog(t *testing.T) {
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
-	start := time.Now()
 	for i := 0; i < loop; i++ {
 		GetLogger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
-	}
-	end := time.Now()
-
-	// 遅過ぎ検知。
-	// 1 回 100 マイクロ秒も掛かってるのは遅い。
-	limit := start.Add(time.Duration(int64(loop*100) * int64(time.Microsecond)))
-	if end.After(limit) {
-		t.Error("Too slow ", end.Sub(start))
-	} else {
-		//t.Error("Not too slow", end.Sub(start))
 	}
 
 	Flush()
@@ -120,7 +109,6 @@ func TestConcurrent(t *testing.T) {
 		lock.Unlock()
 	}()
 
-	// 遅過ぎ検知。
 	// 1 回 100 マイクロ秒も掛かってるのは遅い。
 	limit := start.Add(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
 	for time.Now().Before(limit) {
@@ -133,12 +121,6 @@ func TestConcurrent(t *testing.T) {
 		}
 
 		time.Sleep(time.Millisecond)
-	}
-
-	if end == zero {
-		t.Fatal("Too slow ", time.Now().Sub(start))
-	} else {
-		//t.Error("Not too slow", end.Sub(start))
 	}
 
 	Flush()

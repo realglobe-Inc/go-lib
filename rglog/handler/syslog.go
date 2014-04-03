@@ -36,6 +36,8 @@ func (hndl *SyslogHandler) Output(depth int, lv level.Level, v ...interface{}) {
 
 	file = trimPrefix(file)
 
+	// {レベル} {ファイル名}:{行番号} {メッセージ}
+	// 日時は syslog が付ける。
 	msg := fmt.Sprintf("%.3v %s:%d %s\n", lv, file, line, fmt.Sprint(v...))
 
 	hndl.mutex.Lock()
@@ -60,7 +62,6 @@ func (hndl *SyslogHandler) SetLevel(lv level.Level) {
 }
 
 func (hndl *SyslogHandler) Flush() {
-	// hndl.writer.Close()
 	return
 }
 
