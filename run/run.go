@@ -49,8 +49,9 @@ func Neglect(args ...string) {
 
 	log.Debug(cmd.Args)
 
-	if e := cmd.Run(); e != nil {
-		log.Err(e)
+	if err := cmd.Run(); err != nil {
+		log.Err(erro.Unwrap(err))
+		log.Debug(err)
 	}
 }
 
@@ -91,8 +92,8 @@ func Output(args ...string) (string, string, error) {
 
 	log.Debug(cmd.Args)
 
-	if e := cmd.Run(); e != nil {
-		return "", "", erro.Wrap(newError(e, stdout.String(), stderr.String()))
+	if err := cmd.Run(); err != nil {
+		return "", "", erro.Wrap(newError(err, stdout.String(), stderr.String()))
 	}
 
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), nil
@@ -110,8 +111,8 @@ func Stdout(args ...string) (string, error) {
 
 // 画面表示せず、非会話型。
 func Quiet(args ...string) error {
-	if _, _, e := Output(args...); e != nil {
-		return e
+	if _, _, err := Output(args...); err != nil {
+		return err
 	}
 
 	return nil

@@ -24,9 +24,9 @@ func TestLogging(t *testing.T) {
 	rootLog.SetUseParent(false)
 
 	path := filepath.Join(os.TempDir(), "locklog_test")
-	if e := os.Remove(path); e != nil {
-		if !os.IsNotExist(e) {
-			t.Fatal(e)
+	if err := os.Remove(path); err != nil {
+		if !os.IsNotExist(err) {
+			t.Fatal(err)
 		}
 	}
 	defer os.Remove(path)
@@ -78,9 +78,9 @@ func BenchmarkLogging(b *testing.B) {
 	rootLog.SetUseParent(false)
 
 	path := filepath.Join(os.TempDir(), "locklog_test")
-	if e := os.Remove(path); e != nil {
-		if !os.IsNotExist(e) {
-			b.Fatal(e)
+	if err := os.Remove(path); err != nil {
+		if !os.IsNotExist(err) {
+			b.Fatal(err)
 		}
 	}
 	defer os.Remove(path)
@@ -107,9 +107,9 @@ func TestConcurrent(t *testing.T) {
 	rootLog.SetUseParent(false)
 
 	path := filepath.Join(os.TempDir(), "locklog_test")
-	if e := os.Remove(path); e != nil {
-		if !os.IsNotExist(e) {
-			t.Fatal(e)
+	if err := os.Remove(path); err != nil {
+		if !os.IsNotExist(err) {
+			t.Fatal(err)
 		}
 	}
 	defer os.Remove(path)
@@ -196,9 +196,9 @@ func BenchmarkConcurrent(b *testing.B) {
 	rootLog.SetUseParent(false)
 
 	path := filepath.Join(os.TempDir(), "locklog_test")
-	if e := os.Remove(path); e != nil {
-		if !os.IsNotExist(e) {
-			b.Fatal(e)
+	if err := os.Remove(path); err != nil {
+		if !os.IsNotExist(err) {
+			b.Fatal(err)
 		}
 	}
 	defer os.Remove(path)

@@ -24,9 +24,9 @@ func TestLog(t *testing.T) {
 	rootLog.SetUseParent(false)
 
 	path := filepath.Join(os.TempDir(), "log_test.go.log")
-	if e := os.Remove(path); e != nil {
-		if !os.IsNotExist(e) {
-			t.Fatal(e)
+	if err := os.Remove(path); err != nil {
+		if !os.IsNotExist(err) {
+			t.Fatal(err)
 		}
 	}
 	defer os.Remove(path)
@@ -69,9 +69,9 @@ func TestConcurrent(t *testing.T) {
 	rootLog.SetUseParent(false)
 
 	path := filepath.Join(os.TempDir(), "log_test.go.log")
-	if e := os.Remove(path); e != nil {
-		if !os.IsNotExist(e) {
-			t.Fatal(e)
+	if err := os.Remove(path); err != nil {
+		if !os.IsNotExist(err) {
+			t.Fatal(err)
 		}
 	}
 	defer os.Remove(path)

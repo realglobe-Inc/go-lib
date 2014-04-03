@@ -138,15 +138,15 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 			}
 
 			// ファイルを閉じる。
-			if e := writer.Flush(); e != nil {
-				fmt.Fprintln(os.Stderr, erro.Wrap(e))
+			if err := writer.Flush(); err != nil {
+				fmt.Fprintln(os.Stderr, erro.Wrap(err))
 				errCount++
 				file.Close()
 				continue
 			}
 
-			if e := file.Close(); e != nil {
-				fmt.Fprintln(os.Stderr, erro.Wrap(e))
+			if err := file.Close(); err != nil {
+				fmt.Fprintln(os.Stderr, erro.Wrap(err))
 				errCount++
 				continue
 			}
@@ -157,8 +157,8 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 			}
 
 			// ファイルを回す。
-			if e := rotateFile(path, num); e != nil {
-				fmt.Fprintln(os.Stderr, erro.Wrap(e))
+			if err := rotateFile(path, num); err != nil {
+				fmt.Fprintln(os.Stderr, erro.Wrap(err))
 				errCount++
 				continue
 			}
@@ -197,14 +197,14 @@ func rotateFile(path string, num int) error {
 	for ; n > 0; n-- {
 		from := path + "." + strconv.Itoa(n)
 		to := path + "." + strconv.Itoa(n+1)
-		if e := os.Rename(from, to); e != nil {
-			return erro.Wrap(e)
+		if err := os.Rename(from, to); err != nil {
+			return erro.Wrap(err)
 		}
 	}
 
 	// 最新版 を .1 に。
-	if e := os.Rename(path, path+".1"); e != nil {
-		return erro.Wrap(e)
+	if err := os.Rename(path, path+".1"); err != nil {
+		return erro.Wrap(err)
 	}
 
 	return nil

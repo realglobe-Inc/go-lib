@@ -12,11 +12,11 @@ func tempFileName() (string, error) {
 	if err != nil {
 		return "", erro.Wrap(err)
 	}
-	if e := temp.Close(); e != nil {
-		return "", erro.Wrap(e)
+	if err := temp.Close(); err != nil {
+		return "", erro.Wrap(err)
 	}
-	if e := os.Remove(temp.Name()); e != nil {
-		return "", erro.Wrap(e)
+	if err := os.Remove(temp.Name()); err != nil {
+		return "", erro.Wrap(err)
 	}
 	return temp.Name(), nil
 }
@@ -39,11 +39,11 @@ func TestRun(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(temp)
-	if e := Run("touch", temp); e != nil {
-		t.Fatal(e)
+	if err := Run("touch", temp); err != nil {
+		t.Fatal(err)
 	}
-	if exist, e := isExist(temp); e != nil {
-		t.Fatal(e)
+	if exist, err := isExist(temp); err != nil {
+		t.Fatal(err)
 	} else if !exist {
 		t.Error(temp)
 	}
@@ -55,11 +55,11 @@ func TestNonInteractive(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(temp)
-	if e := NonInteractive("touch", temp); e != nil {
-		t.Fatal(e)
+	if err := NonInteractive("touch", temp); err != nil {
+		t.Fatal(err)
 	}
-	if exist, e := isExist(temp); e != nil {
-		t.Fatal(e)
+	if exist, err := isExist(temp); err != nil {
+		t.Fatal(err)
 	} else if !exist {
 		t.Error(temp)
 	}
@@ -72,8 +72,8 @@ func TestNeglect(t *testing.T) {
 	}
 	defer os.Remove(temp)
 	Neglect("touch", temp)
-	if exist, e := isExist(temp); e != nil {
-		t.Fatal(e)
+	if exist, err := isExist(temp); err != nil {
+		t.Fatal(err)
 	} else if !exist {
 		t.Error(temp)
 	}
@@ -105,11 +105,11 @@ func TestQuiet(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(temp)
-	if e := Quiet("touch", temp); e != nil {
-		t.Fatal(e)
+	if err := Quiet("touch", temp); err != nil {
+		t.Fatal(err)
 	}
-	if exist, e := isExist(temp); e != nil {
-		t.Fatal(e)
+	if exist, err := isExist(temp); err != nil {
+		t.Fatal(err)
 	} else if !exist {
 		t.Error(temp)
 	}

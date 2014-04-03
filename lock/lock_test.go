@@ -12,12 +12,12 @@ func TestLock(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(file.Name())
-	if e := file.Close(); e != nil {
-		t.Fatal(e)
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
 	}
 
-	if e := os.Remove(file.Name()); e != nil {
-		t.Fatal(e)
+	if err := os.Remove(file.Name()); err != nil {
+		t.Fatal(err)
 	}
 
 	n := 10
@@ -43,8 +43,8 @@ func TestLock(t *testing.T) {
 				}
 
 				counter++
-				if e := lock.Unlock(); e != nil {
-					t.Error(id, j, e)
+				if err := lock.Unlock(); err != nil {
+					t.Error(id, j, err)
 					return
 				}
 			}
@@ -67,12 +67,12 @@ func TestReentrant(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(file.Name())
-	if e := file.Close(); e != nil {
-		t.Fatal(e)
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
 	}
 
-	if e := os.Remove(file.Name()); e != nil {
-		t.Fatal(e)
+	if err := os.Remove(file.Name()); err != nil {
+		t.Fatal(err)
 	}
 
 	lock, err := Lock(file.Name())

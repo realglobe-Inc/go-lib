@@ -122,8 +122,8 @@ func Escape(path, suffix string) (newName string, err error) {
 	newName = name + "." + tag + suffix
 	newPath := filepath.Join(filepath.Dir(path), newName)
 
-	if e := os.Rename(path, newPath); e != nil {
-		return "", erro.Wrap(e)
+	if err := os.Rename(path, newPath); err != nil {
+		return "", erro.Wrap(err)
 	}
 
 	log.Debug("mv ", path, " ", newPath)
@@ -144,12 +144,12 @@ func Copy(to, from string) error {
 		return erro.Wrap(err)
 	}
 
-	if e := os.MkdirAll(filepath.Dir(to), dirPerm); e != nil {
-		return erro.Wrap(e)
+	if err := os.MkdirAll(filepath.Dir(to), dirPerm); err != nil {
+		return erro.Wrap(err)
 	}
 
-	if e := ioutil.WriteFile(to, buff, fi.Mode()); e != nil {
-		return erro.Wrap(e)
+	if err := ioutil.WriteFile(to, buff, fi.Mode()); err != nil {
+		return erro.Wrap(err)
 	}
 
 	log.Debug("cp ", from, " ", to)
@@ -158,8 +158,8 @@ func Copy(to, from string) error {
 }
 
 func RecursiveCopy(to, from string) error {
-	if e := os.MkdirAll(filepath.Dir(to), dirPerm); e != nil {
-		return erro.Wrap(e)
+	if err := os.MkdirAll(filepath.Dir(to), dirPerm); err != nil {
+		return erro.Wrap(err)
 	}
 
 	// ひどい手抜き。
@@ -169,8 +169,8 @@ func RecursiveCopy(to, from string) error {
 
 // ファイルの末尾に付け足す。
 func Append(path string, data []byte) error {
-	if e := os.MkdirAll(filepath.Dir(path), dirPerm); e != nil {
-		return erro.Wrap(e)
+	if err := os.MkdirAll(filepath.Dir(path), dirPerm); err != nil {
+		return erro.Wrap(err)
 	}
 
 	writer, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, filePerm)
@@ -184,8 +184,8 @@ func Append(path string, data []byte) error {
 		return erro.Wrap(err)
 	}
 
-	if _, e := writer.WriteAt(data, stat.Size()); e != nil {
-		return erro.Wrap(e)
+	if _, err := writer.WriteAt(data, stat.Size()); err != nil {
+		return erro.Wrap(err)
 	}
 
 	return erro.Wrap(err)
@@ -193,8 +193,8 @@ func Append(path string, data []byte) error {
 
 // ファイルの末尾に行を付け足す。
 func AppendLines(path string, lines []string) error {
-	if e := os.MkdirAll(filepath.Dir(path), dirPerm); e != nil {
-		return erro.Wrap(e)
+	if err := os.MkdirAll(filepath.Dir(path), dirPerm); err != nil {
+		return erro.Wrap(err)
 	}
 
 	writer, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, filePerm)
@@ -212,8 +212,8 @@ func AppendLines(path string, lines []string) error {
 	if stat.Size() > 1 {
 		// 改行で終わっていなければ改行する。
 		tail := make([]byte, 1)
-		if _, e := writer.ReadAt(tail, stat.Size()-1); e != nil {
-			return erro.Wrap(e)
+		if _, err := writer.ReadAt(tail, stat.Size()-1); err != nil {
+			return erro.Wrap(err)
 		} else if tail[0] != '\n' {
 			buff = append(buff, '\n')
 		}
@@ -222,8 +222,8 @@ func AppendLines(path string, lines []string) error {
 		buff = append(buff, []byte(fmt.Sprintln(line))...)
 	}
 
-	if _, e := writer.WriteAt(buff, stat.Size()); e != nil {
-		return erro.Wrap(e)
+	if _, err := writer.WriteAt(buff, stat.Size()); err != nil {
+		return erro.Wrap(err)
 	}
 
 	return erro.Wrap(err)
@@ -249,24 +249,24 @@ func ChownById(path string, uid int) error {
 }
 
 func ChownByIdGid(path string, uid, gid int) error {
-	if e := filepath.Walk(path, func(curPath string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(path, func(curPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return erro.Wrap(err)
 		}
 
 		if info.Mode()&os.ModeSymlink == os.ModeSymlink {
-			if e := os.Lchown(curPath, uid, gid); e != nil {
-				return erro.Wrap(e)
+			if err := os.Lchown(curPath, uid, gid); err != nil {
+				return erro.Wrap(err)
 			}
 		} else {
-			if e := os.Chown(curPath, uid, gid); e != nil {
-				return erro.Wrap(e)
+			if err := os.Chown(curPath, uid, gid); err != nil {
+				return erro.Wrap(err)
 			}
 		}
 
 		return nil
-	}); e != nil {
-		return erro.Wrap(e)
+	}); err != nil {
+		return erro.Wrap(err)
 	}
 
 	log.Debug("chown ", uid, ":", gid, " -R ", path)

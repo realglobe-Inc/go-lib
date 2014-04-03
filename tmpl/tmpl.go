@@ -26,14 +26,14 @@ func Generate(destPath, tmplPath string, data interface{}) error {
 	}
 
 	var buf bytes.Buffer
-	if e := tmpl.Execute(&buf, data); e != nil {
-		return erro.Wrap(e)
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return erro.Wrap(err)
 	}
 
 	// 変換に成功したので書き込む。
 
-	if e := os.MkdirAll(filepath.Dir(destPath), dirPerm); e != nil {
-		return erro.Wrap(e)
+	if err := os.MkdirAll(filepath.Dir(destPath), dirPerm); err != nil {
+		return erro.Wrap(err)
 	}
 
 	dest, err := os.Create(destPath)
@@ -42,8 +42,8 @@ func Generate(destPath, tmplPath string, data interface{}) error {
 	}
 	defer dest.Close()
 
-	if _, e := io.Copy(dest, &buf); e != nil {
-		return erro.Wrap(e)
+	if _, err := io.Copy(dest, &buf); err != nil {
+		return erro.Wrap(err)
 	}
 
 	log.Debug("tmpl ", tmplPath, " ", destPath)
@@ -60,8 +60,8 @@ func Generate(destPath, tmplPath string, data interface{}) error {
 	}
 
 	if destFi.Mode() != tmplFi.Mode() {
-		if e := dest.Chmod(tmplFi.Mode()); e != nil {
-			return erro.Wrap(e)
+		if err := dest.Chmod(tmplFi.Mode()); err != nil {
+			return erro.Wrap(err)
 		}
 		log.Debug("chmod ", tmplFi.Mode(), " ", destPath)
 	}

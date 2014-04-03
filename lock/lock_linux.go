@@ -33,10 +33,10 @@ func lock(path string, flag int) (*Locker, error) {
 		return nil, erro.Wrap(err)
 	}
 
-	if e := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|flag); e != nil {
+	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|flag); err != nil {
 		file.Close()
 
-		if e == syscall.EWOULDBLOCK {
+		if err == syscall.EWOULDBLOCK {
 			return nil, nil
 		}
 

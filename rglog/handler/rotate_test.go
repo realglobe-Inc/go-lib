@@ -16,11 +16,11 @@ func TestRotateHandlerRotation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := file.Close(); e != nil {
-		t.Fatal(e)
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
 	}
-	if e := os.Remove(file.Name()); e != nil {
-		t.Fatal(e)
+	if err := os.Remove(file.Name()); err != nil {
+		t.Fatal(err)
 	}
 	defer os.Remove(file.Name())
 
@@ -38,8 +38,8 @@ func TestRotateHandlerRotation(t *testing.T) {
 
 	for i := 1; i <= n; i++ {
 		bak := path + "." + strconv.Itoa(i)
-		if _, e := os.Stat(bak); e != nil {
-			t.Error(bak, e)
+		if _, err := os.Stat(bak); err != nil {
+			t.Error(bak, err)
 		}
 
 		os.Remove(bak)
@@ -54,11 +54,11 @@ func TestRotateHandlerLogging(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if e := file.Close(); e != nil {
-		t.Fatal(e)
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
 	}
-	if e := os.Remove(file.Name()); e != nil {
-		t.Fatal(e)
+	if err := os.Remove(file.Name()); err != nil {
+		t.Fatal(err)
 	}
 	defer os.Remove(file.Name())
 

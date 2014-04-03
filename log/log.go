@@ -90,11 +90,11 @@ func setFile(level Level, prefix string, flag int, path string) error {
 	fileLogger = log.New(writer, prefix, flag)
 
 	if oldFile != nil {
-		if e := oldWriter.Flush(); e != nil {
-			return erro.Wrap(e)
+		if err := oldWriter.Flush(); err != nil {
+			return erro.Wrap(err)
 		}
-		if e := oldFile.Close(); e != nil {
-			return erro.Wrap(e)
+		if err := oldFile.Close(); err != nil {
+			return erro.Wrap(err)
 		}
 	}
 
@@ -108,11 +108,11 @@ func CloseFile() error {
 	fileLogger = nil
 
 	if file != nil {
-		if e := writer.Flush(); e != nil {
-			return erro.Wrap(e)
+		if err := writer.Flush(); err != nil {
+			return erro.Wrap(err)
 		}
-		if e := file.Close(); e != nil {
-			return erro.Wrap(e)
+		if err := file.Close(); err != nil {
+			return erro.Wrap(err)
 		}
 	}
 
@@ -190,7 +190,7 @@ type LoggerRegistroy interface {
 	// 指定した名前のLoggerを取得する。
 	GetLogger(name string) Logger
 	// Loggerを追加する。
-	AddLogger(name string, factory func()Logger)
+	AddLogger(name string, factory func() Logger)
 }
 
 // LoggerRegistoryの実体
@@ -215,7 +215,7 @@ func (lg loggerRegistroy) GetLogger(name string) Logger {
 }
 
 // loggerRegistoryの実装
-func (lg loggerRegistroy) AddLogger(name string, factory func()Logger) {
+func (lg loggerRegistroy) AddLogger(name string, factory func() Logger) {
 	lg[name] = factory()
 }
 
