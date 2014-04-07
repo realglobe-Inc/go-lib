@@ -76,3 +76,11 @@ func NewSyslogHandler(tag string) (Handler, error) {
 	}
 	return &SyslogHandler{writer: writer}, nil
 }
+
+func NewSyslogHandlerOf(tag, prot, addr string) (Handler, error) {
+	writer, err := syslog.Dial(prot, addr, syslog.LOG_INFO, tag)
+	if err != nil {
+		return nil, erro.Wrap(err)
+	}
+	return &SyslogHandler{writer: writer}, nil
+}
