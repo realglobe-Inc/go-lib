@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 )
@@ -35,19 +34,8 @@ func TestLogging(t *testing.T) {
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
-	start := time.Now()
 	for i := 0; i < loop; i++ {
 		Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
-	}
-	end := time.Now()
-
-	// 遅過ぎ検知。
-	// 1 回 100 マイクロ秒も掛かってるのは遅い。
-	limit := start.Add(time.Duration(int64(loop*100) * int64(time.Microsecond)))
-	if end.After(limit) {
-		t.Error("Too slow ", end.Sub(start))
-	} else {
-		//t.Error("Not too slow", end.Sub(start))
 	}
 
 	Flush()
@@ -118,13 +106,8 @@ func TestConcurrent(t *testing.T) {
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
-	var lock sync.Mutex
-
-	var zero time.Time
-	start := time.Now()
-	end := zero
-
 	c := make(chan bool)
+	timeout := time.After(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
 
 	for i := 0; i < n; i++ {
 		id := i
@@ -137,35 +120,12 @@ func TestConcurrent(t *testing.T) {
 		}()
 	}
 
-	go func() {
-		for i := 0; i < n; i++ {
-			<-c
+	for i := 0; i < n; i++ {
+		select {
+		case <-c:
+		case <-timeout:
+			t.Fatal("Dead lock?")
 		}
-
-		lock.Lock()
-		end = time.Now()
-		lock.Unlock()
-	}()
-
-	// 遅過ぎ検知。
-	// 1 回 100 マイクロ秒も掛かってるのは遅い。
-	limit := start.Add(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
-	for time.Now().Before(limit) {
-		lock.Lock()
-		curEnd := end
-		lock.Unlock()
-
-		if curEnd != zero {
-			break
-		}
-
-		time.Sleep(time.Millisecond)
-	}
-
-	if end == zero {
-		t.Fatal("Too slow ", time.Now().Sub(start))
-	} else {
-		//t.Error("Not too slow", end.Sub(start))
 	}
 
 	Flush()
@@ -207,13 +167,8 @@ func BenchmarkConcurrent(b *testing.B) {
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
-	var lock sync.Mutex
-
-	var zero time.Time
-	start := time.Now()
-	end := zero
-
 	c := make(chan bool)
+	timeout := time.After(time.Duration(int64(n*b.N*100) * int64(time.Microsecond)))
 
 	for i := 0; i < n; i++ {
 		id := i
@@ -226,29 +181,12 @@ func BenchmarkConcurrent(b *testing.B) {
 		}()
 	}
 
-	go func() {
-		for i := 0; i < n; i++ {
-			<-c
+	for i := 0; i < n; i++ {
+		select {
+		case <-c:
+		case <-timeout:
+			b.Fatal("Dead lock?")
 		}
-
-		lock.Lock()
-		end = time.Now()
-		lock.Unlock()
-	}()
-
-	// 遅過ぎ検知。
-	// 1 回 100 マイクロ秒も掛かってるのは遅い。
-	limit := start.Add(time.Duration(int64(b.N*100) * int64(time.Microsecond)))
-	for time.Now().Before(limit) {
-		lock.Lock()
-		curEnd := end
-		lock.Unlock()
-
-		if curEnd != zero {
-			break
-		}
-
-		time.Sleep(time.Millisecond)
 	}
 
 	Flush()

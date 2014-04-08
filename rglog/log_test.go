@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 )
@@ -80,13 +79,8 @@ func TestConcurrent(t *testing.T) {
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
-	var lock sync.Mutex
-
-	var zero time.Time
-	start := time.Now()
-	end := zero
-
 	c := make(chan bool)
+	timeout := time.After(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
 
 	for i := 0; i < n; i++ {
 		id := i
@@ -99,28 +93,12 @@ func TestConcurrent(t *testing.T) {
 		}()
 	}
 
-	go func() {
-		for i := 0; i < n; i++ {
-			<-c
+	for i := 0; i < n; i++ {
+		select {
+		case <-c:
+		case <-timeout:
+			t.Fatal("Dead lock?")
 		}
-
-		lock.Lock()
-		end = time.Now()
-		lock.Unlock()
-	}()
-
-	// 1 回 100 マイクロ秒も掛かってるのは遅い。
-	limit := start.Add(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
-	for time.Now().Before(limit) {
-		lock.Lock()
-		curEnd := end
-		lock.Unlock()
-
-		if curEnd != zero {
-			break
-		}
-
-		time.Sleep(time.Millisecond)
 	}
 
 	Flush()
