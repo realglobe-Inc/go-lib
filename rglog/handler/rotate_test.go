@@ -27,7 +27,10 @@ func TestRotateHandlerRotation(t *testing.T) {
 	path := file.Name()
 	n := 100
 
-	hndl := NewRotateHandler(path, 0, n)
+	hndl, err := NewRotateHandler(path, 0, n)
+	if err != nil {
+		t.Fatal(err)
+	}
 	hndl.SetLevel(level.ALL)
 
 	for i := 0; i < n; i++ {
@@ -65,7 +68,10 @@ func TestRotateHandlerLogging(t *testing.T) {
 	path := file.Name()
 	n := 100
 
-	hndl := NewRotateHandler(path, 1<<20, 10)
+	hndl, err := NewRotateHandler(path, 1<<20, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
 	hndl.SetLevel(level.ALL)
 
 	for i := 0; i < n; i++ {

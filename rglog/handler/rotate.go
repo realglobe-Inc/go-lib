@@ -78,14 +78,23 @@ func NewGoHandler(goFunc func(done chan bool, queue chan *FormatEntry), queueCap
 
 const defaultQueueCapacity = 8192
 
-func NewRotateHandler(path string, limit int64, num int) Handler {
+func NewRotateHandler(path string, limit int64, num int) (Handler, error) {
 	return NewRotateHandlerUsing(path, limit, num, defaultQueueCapacity, &simpleFormatter{})
 }
 
 const errThreshold = 5                    // 再試行する限度。
 const coolDownDuration = time.Millisecond // 異常発生時に空ける間隔。
 
-func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, formatter Formatter) Handler {
+func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, formatter Formatter) (Handler, error) {
+	// ファイルチェック。
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, logPerm)
+	if err != nil {
+		return nil, erro.Wrap(err)
+	}
+	if err := file.Close(); err != nil {
+		return nil, erro.Wrap(err)
+	}
+
 	return NewGoHandler(func(done chan bool, queue chan *FormatEntry) {
 		for errCount := 0; errCount < errThreshold; {
 
@@ -173,7 +182,7 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 				done <- false
 			}
 		}
-	}, queueCapacity)
+	}, queueCapacity), nil
 }
 
 func rotateFile(path string, num int) error {
