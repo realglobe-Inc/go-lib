@@ -5,6 +5,7 @@ import (
 	"github.com/realglobe-Inc/go-lib-rg/rglog"
 	"os"
 	"syscall"
+	"time"
 )
 
 var log rglog.Logger
@@ -58,4 +59,43 @@ func (lock *Locker) Unlock() error {
 
 	log.Debug("Unlocked ", file.Name(), ".")
 	return nil
+}
+
+// ロックできるか指定した時間が経つまで待つ。
+// ロックできずに指定した時間が経ったら nil を返す。
+func WaitLock(path string, waittime time.Duration) (*Locker, error) {
+
+	timeoutCh := time.After(waittime)
+	lockerCh := make(chan *Locker, 1)
+	errCh := make(chan error, 1)
+
+	ackCh := make(chan bool, 1)
+
+	go func() {
+		locker, err := Lock(path)
+		if err != nil {
+			errCh <- err
+			return
+		}
+
+		lockerCh <- locker
+		if <-ackCh {
+			// 受け取ってもらえた。
+			return
+		}
+
+		// 受け取ってもらえなかった。
+		locker.Unlock()
+	}()
+
+	select {
+	case err := <-errCh:
+		return nil, err
+	case locker := <-lockerCh:
+		ackCh <- true
+		return locker, nil
+	case <-timeoutCh:
+		ackCh <- false
+		return nil, nil
+	}
 }
