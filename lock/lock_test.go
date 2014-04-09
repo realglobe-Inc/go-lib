@@ -233,23 +233,15 @@ func TestTimeout(t *testing.T) {
 	}
 	defer lock.Unlock()
 
-	counter := 0
-
-	go func() {
-		for i := 0; i < 5; i++ {
-			time.Sleep(time.Millisecond)
-			counter++
-		}
-	}()
-
+	start := time.Now()
 	lock, err = WaitLock(file.Name(), 4*time.Millisecond+500*time.Microsecond)
 	if err != nil {
 		t.Fatal(err)
 	} else if lock != nil {
 		defer lock.Unlock()
 		t.Error(lock)
-	} else if counter != 4 {
-		t.Error(counter)
+	} else if dur := time.Since(start); dur <= 4*time.Millisecond || 5*time.Millisecond <= dur {
+		t.Error(dur)
 	}
 
 }
