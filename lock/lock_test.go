@@ -233,14 +233,17 @@ func TestTimeout(t *testing.T) {
 	}
 	defer lock.Unlock()
 
+	min := time.Second
+	max := min + time.Second
+
 	start := time.Now()
-	lock, err = WaitLock(file.Name(), 4*time.Millisecond+500*time.Microsecond)
+	lock, err = WaitLock(file.Name(), (min+max)/2)
 	if err != nil {
 		t.Fatal(err)
 	} else if lock != nil {
 		defer lock.Unlock()
 		t.Error(lock)
-	} else if dur := time.Since(start); dur <= 4*time.Millisecond || 5*time.Millisecond <= dur {
+	} else if dur := time.Since(start); dur <= min || max <= dur {
 		t.Error(dur)
 	}
 
