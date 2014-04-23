@@ -60,3 +60,22 @@ func Values() []Level {
 	}
 	return values
 }
+
+// flag.Var で使う。
+type levelVar struct {
+	*Level
+}
+
+func (v levelVar) Set(s string) error {
+	var err error
+	*v.Level, err = ValueOf(s)
+	if err != nil {
+		return erro.Wrap(err)
+	}
+	return nil
+}
+
+func Var(lv *Level, defaultLv Level) levelVar {
+	*lv = defaultLv
+	return levelVar{lv}
+}
