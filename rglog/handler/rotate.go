@@ -86,6 +86,8 @@ const errThreshold = 5                    // 再試行する限度。
 const coolDownDuration = time.Millisecond // 異常発生時に空ける間隔。
 
 func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, formatter Formatter) (Handler, error) {
+	// ロックファイルをつくったほうが良いが、OS 依存なので今は止めとく。
+
 	// ファイルチェック。
 	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, logPerm)
 	if err != nil {
@@ -96,84 +98,96 @@ func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, for
 	}
 
 	return NewGoHandler(func(done chan bool, queue chan *FormatEntry) {
-		for errCount := 0; errCount < errThreshold; {
+		func() {
+			defer func() {
+				if err := recover(); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+				}
+			}()
 
-			// 異常が発生してたら、ちょっと落ち着く。
-			if errCount > 0 {
-				time.Sleep(coolDownDuration)
-			}
+			for errCount := 0; errCount < errThreshold; {
 
-			// ファイルを開く。
-			file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, logPerm)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, erro.Wrap(err))
-				errCount++
-				continue
-			}
-
-			fi, err := file.Stat()
-			if err != nil {
-				fmt.Fprintln(os.Stderr, erro.Wrap(err))
-				errCount++
-				file.Close()
-				continue
-			}
-
-			size := fi.Size()
-			writer := bufio.NewWriter(file)
-
-			// ログを取る。
-			for size <= limit { // 最大 1 エントリ分はみ出す。でも、limit == 0 でも動く。
-				ent := <-queue
-
-				if ent == FlushTrigger() {
-					err := writer.Flush()
-					if err != nil {
-						fmt.Fprintln(os.Stderr, erro.Wrap(err))
-						done <- (err == nil)
-						break
-					}
-					done <- (err == nil)
+				// 異常が発生してたら、ちょっと落ち着く。
+				if errCount > 0 {
+					time.Sleep(coolDownDuration)
 				}
 
-				buff := formatter.Format(ent.Date, ent.File, ent.Line, ent.Lv, ent.Args...)
-				_, err := writer.Write(buff)
+				// ファイルを開く。
+				file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, logPerm)
 				if err != nil {
 					fmt.Fprintln(os.Stderr, erro.Wrap(err))
-					break
+					errCount++
+					continue
 				}
 
-				size += int64(len(buff))
+				fi, err := file.Stat()
+				if err != nil {
+					fmt.Fprintln(os.Stderr, erro.Wrap(err))
+					errCount++
+					file.Close()
+					continue
+				}
+
+				size := fi.Size()
+				writer := bufio.NewWriter(file)
+
+				// ログを取る。
+				for size <= limit { // 最大 1 エントリ分はみ出す。でも、limit == 0 でも動く。
+					ent := <-queue
+
+					if ent == FlushTrigger() {
+						err := writer.Flush()
+						if err != nil {
+							fmt.Fprintln(os.Stderr, erro.Wrap(err))
+							done <- (err == nil)
+							break
+						}
+						done <- (err == nil)
+					}
+
+					buff := formatter.Format(ent.Date, ent.File, ent.Line, ent.Lv, ent.Args...)
+					_, err := writer.Write(buff)
+					if err != nil {
+						fmt.Fprintln(os.Stderr, erro.Wrap(err))
+						break
+					}
+
+					size += int64(len(buff))
+				}
+
+				// ファイルを閉じる。
+				if err := writer.Flush(); err != nil {
+					fmt.Fprintln(os.Stderr, erro.Wrap(err))
+					errCount++
+					file.Close()
+					continue
+				}
+
+				if err := file.Close(); err != nil {
+					fmt.Fprintln(os.Stderr, erro.Wrap(err))
+					errCount++
+					continue
+				}
+
+				if size < limit { // ログを取ってるときに異常が発生してた。
+					errCount++
+					continue
+				}
+
+				// ファイルを回す。
+				if err := rotateFile(path, num); err != nil {
+					fmt.Fprintln(os.Stderr, erro.Wrap(err))
+					errCount++
+					continue
+				}
+
+				errCount = 0
 			}
 
-			// ファイルを閉じる。
-			if err := writer.Flush(); err != nil {
-				fmt.Fprintln(os.Stderr, erro.Wrap(err))
-				errCount++
-				file.Close()
-				continue
-			}
+			fmt.Fprintln(os.Stderr, "Too many errors.")
+		}()
 
-			if err := file.Close(); err != nil {
-				fmt.Fprintln(os.Stderr, erro.Wrap(err))
-				errCount++
-				continue
-			}
-
-			if size < limit { // ログを取ってるときに異常が発生してた。
-				errCount++
-				continue
-			}
-
-			// ファイルを回す。
-			if err := rotateFile(path, num); err != nil {
-				fmt.Fprintln(os.Stderr, erro.Wrap(err))
-				errCount++
-				continue
-			}
-
-			errCount = 0
-		}
+		fmt.Fprintln(os.Stderr, "Logging into ", path, " was aborted.")
 
 		// 異常でループを抜けたら、デッドロック防止処理だけする。
 		for {
