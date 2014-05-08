@@ -21,6 +21,10 @@ func (err *Tracer) Cause() error {
 	return err.cause
 }
 
+func (err *Tracer) Stack() string {
+	return err.trace
+}
+
 const traceLen = 8192
 
 // スタックトレースを付加する。
