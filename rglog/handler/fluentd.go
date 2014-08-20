@@ -1,93 +1,121 @@
 package handler
 
 import (
-	"bytes"
+	"bufio"
 	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/erro"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
-	"net/http"
+	"net"
 	"os"
-	"regexp"
-	"runtime"
-	"strings"
-	"sync"
+	"strconv"
+	"time"
 )
 
-// fluentd の http 入力にログを流すハンドラ。
+// fluentd の in_forward にログを流す coreHandler。
+type fluentdCoreHandler struct {
+	// fluentd の tag。
+	tag string
 
-const bodyType = "application/x-www-form-urlencoded"
-
-type FluentdHandler struct {
-	lock   sync.Mutex
-	lv     level.Level
-	url    string
-	client *http.Client
+	// fluentd サーバーへの接続端。
+	*bufio.Writer
 }
 
-var notPrintable *regexp.Regexp
+func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+	// 形式は JSON で書けば、
+	//
+	// [
+	//   "a.b.c",
+	//   1308466941,
+	//   {
+	//     "level": "INFO",
+	//     "file": "github.com/realglobe-Inc/go-lib-rg/rglog/handler",
+	//     "line": 39,
+	//     "message": "Unko!"
+	//   }
+	// ]
+	//
+	// これを MessagePack にして送る。
+	// http://docs.fluentd.org/ja/articles/in_forward と
+	// https://github.com/msgpack/msgpack/blob/master/spec.md を参照。
 
-func init() {
-	notPrintable = regexp.MustCompile("[^[:print:]]+")
-}
-
-func (hndl *FluentdHandler) Output(depth int, lv level.Level, v ...interface{}) {
-	hndl.lock.Lock()
-	if lv > hndl.lv {
-		return
-	}
-	hndl.lock.Unlock()
-
-	var file string
-	var line int
-	var ok bool
-	_, file, line, ok = runtime.Caller(depth + 1)
-	if !ok {
-		file = "???"
-		line = 0
-	}
-
-	file = trimPrefix(file)
-
-	// {"level":"{レベル}","file":"{ファイル名}","line":{行番号},"message":{メッセージ}}
-	// 日時は fluentd が付ける。
+	date := time.Now().Unix()
 	msg := fmt.Sprint(v...)
-	msg = strings.Replace(msg, "\"", "\\\"", -1)
-	msg = notPrintable.ReplaceAllString(msg, " ")
-	buff := fmt.Sprintf("json={\"level\":\"%v\",\"file\":\"%s\",\"line\":%d,\"message\":\"%s\"}", lv, file, line, msg)
 
-	// http.Client がスレッドセーフらしいのでロックしなくていい。
-	// TODO fluentd が処理して返答するまで待ってしまうので非効率。
-	// fluentd からの返答を捨て続けるゴルーチンを立てて、送信したら後は知らんという形に書き換えた方が良さそう。
-	resp, err := hndl.client.Post(hndl.url, bodyType, bytes.NewBufferString(buff))
-	if err != nil {
+	// fixarray 3.
+	buff := []byte{0x90 | 3}
+
+	buff = append(buff, messagePackString(hndl.tag)...)
+
+	buff = append(buff, messagePackInteger(date)...)
+
+	// fixmap 4.
+	buff = append(buff, 0x80|4)
+
+	buff = append(buff, messagePackString("level")...)
+	buff = append(buff, messagePackString(lv.String())...)
+
+	buff = append(buff, messagePackString("file")...)
+	buff = append(buff, messagePackString(file)...)
+
+	buff = append(buff, messagePackString("line")...)
+	buff = append(buff, messagePackInteger(int64(line))...)
+
+	buff = append(buff, messagePackString("message")...)
+	buff = append(buff, messagePackString(msg)...)
+
+	if _, err := hndl.Write(buff); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
-	if err := resp.Body.Close(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+}
+
+func messagePackString(val string) []byte {
+	buff := []byte{}
+	if length := len(val); length < (1 << 4) {
+		// fixstr.
+		buff = append(buff, byte(0xa0|length))
+	} else if length < (1 << 8) {
+		// str8.
+		buff = append(buff, 0xd9, byte(length))
+	} else if length < (1 << 16) {
+		// str16.
+		buff = append(buff, 0xda, byte((length&(0xff<<8))>>8), byte(length&0xff))
+	} else if length < (1 << 32) {
+		// str32.
+		buff = append(buff, 0xdb, byte((length&(0xff<<24))>>24), byte((length&(0xff<<16))>>16), byte((length&(0xff<<8))>>8), byte(length&0xff))
+	} else {
+		panic("too long string " + strconv.Itoa(length) + ".")
 	}
+	buff = append(buff, []byte(val)...)
+	return buff
 }
 
-func (hndl *FluentdHandler) SetLevel(lv level.Level) {
-	hndl.lock.Lock()
-	defer hndl.lock.Unlock()
-
-	hndl.lv = lv
+func messagePackInteger(val int64) []byte {
+	buff := []byte{}
+	if -(1<<7) <= val && val < (1<<7) {
+		// int8.
+		buff = append(buff, 0xd0, byte(val))
+	} else if -(1<<15) <= val && val < (1<<15) {
+		// int16.
+		buff = append(buff, 0xd1, byte((val&(0xff<<8))>>8), byte(val&0xff))
+	} else if -(1<<31) <= val && val < (1<<31) {
+		// int32.
+		buff = append(buff, 0xd2, byte((val&(0xff<<24))>>24), byte((val&(0xff<<16))>>16), byte((val&(0xff<<8))>>8), byte(val&0xff))
+	} else {
+		// int64.
+		buff = append(buff, 0xd3, byte((uint64(val)&uint64(0xff<<56))>>56), byte((val&(0xff<<48))>>48), byte((val&(0xff<<40))>>40), byte((val&(0xff<<32))>>32), byte((val&(0xff<<24))>>24), byte((val&(0xff<<16))>>16), byte((val&(0xff<<8))>>8), byte(val&0xff))
+	}
+	return buff
 }
 
-func (hndl *FluentdHandler) Flush() {
-	return
+func (hndl *fluentdCoreHandler) flush() {
+	hndl.Flush()
 }
 
-func NewFluentdHandler(host, tag string) (Handler, error) {
-	// 接続テスト。
-	client := &http.Client{}
-	resp, err := client.Post("http://"+host+"/debug.test", bodyType, bytes.NewBufferString("json={\"debug\":\"test\"}"))
+func NewFluentdHandler(addr, tag string) (Handler, error) {
+	conn, err := net.Dial("tcp", addr)
 	if err != nil {
 		return nil, erro.Wrap(err)
 	}
-	if err := resp.Body.Close(); err != nil {
-		return nil, erro.Wrap(err)
-	}
 
-	return &FluentdHandler{url: "http://" + host + "/" + tag, client: client}, nil
+	return wrapCoreHandler(newSynchronizedCoreHandler(&fluentdCoreHandler{tag, bufio.NewWriter(conn)})), nil
 }
