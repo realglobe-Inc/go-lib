@@ -70,12 +70,5 @@ func _BenchmarkFluentdHandler(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer hndl.Flush()
-
-	hndl.SetLevel(level.ALL)
-
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		hndl.Output(0, level.ERR, i)
-	}
+	benchmarkHandler(b, hndl)
 }

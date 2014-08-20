@@ -6,197 +6,112 @@ import (
 	"github.com/realglobe-Inc/go-lib-rg/erro"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
 	"os"
-	"runtime"
+	"path/filepath"
 	"strconv"
-	"sync"
 	"time"
 )
 
-type FormatEntry struct {
-	Date time.Time
-	File string
-	Line int
-	Lv   level.Level
-	Args []interface{}
+const (
+	filePerm os.FileMode = 0644
+	dirPerm              = 0755
+)
+
+// ファイルにログを書き込み、一杯になったらそのファイルをバックアップしてから初期化する coreHandler。
+type rotateCoreHandler struct {
+	// ログファイルのパス。
+	path string
+	// ログファイル 1 つの最大サイズ。
+	limit int64
+	// ログファイルを最大でいくつバックアップするか。
+	num int
+	// ログの書式。
+	Formatter
+
+	// 以下、作業用データ。
+
+	// 今開いているファイル。
+	file *os.File
+	// 今のサイズ。
+	size int64
+	// 書き込み口。
+	*bufio.Writer
 }
 
-// てきとうなポインタを Flush のトリガにする。
-// ポインタ自体で判断するので、中身を保護する必要は無い。
-var flushTrigger = &FormatEntry{}
-
-func FlushTrigger() *FormatEntry {
-	return flushTrigger
-}
-
-type goHandler struct {
-	sync.Mutex
-	lv level.Level
-
-	done  chan bool
-	queue chan *FormatEntry
-}
-
-func (hndl *goHandler) Output(depth int, lv level.Level, v ...interface{}) {
-	hndl.Lock()
-	if lv > hndl.lv {
-		hndl.Unlock()
-		return
+func (hndl *rotateCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+	if err := hndl.outputCore(file, line, lv, v...); err != nil {
+		err = erro.Wrap(err)
+		fmt.Fprintln(os.Stderr, err)
 	}
-	hndl.Unlock()
-
-	now := time.Now()
-	var file string
-	var line int
-	var ok bool
-	_, file, line, ok = runtime.Caller(depth + 1)
-	if !ok {
-		file = "???"
-		line = 0
-	}
-
-	hndl.queue <- &FormatEntry{now, file, line, lv, v}
 }
 
-func (hndl *goHandler) SetLevel(lv level.Level) {
-	hndl.Lock()
-	defer hndl.Unlock()
+func (hndl *rotateCoreHandler) outputCore(file string, line int, lv level.Level, v ...interface{}) error {
+	// ロックファイルをつくったほうが良いが、OS 依存なので止めとく。
 
-	hndl.lv = lv
-}
+	buff := hndl.Formatter.Format(time.Now(), file, line, lv, v...)
 
-func (hndl *goHandler) Flush() {
-	hndl.queue <- FlushTrigger()
-	<-hndl.done
-}
-
-func NewGoHandler(goFunc func(done chan bool, queue chan *FormatEntry), queueCapacity int) Handler {
-	done := make(chan bool)
-	queue := make(chan *FormatEntry, queueCapacity)
-	go goFunc(done, queue)
-	return &goHandler{done: done, queue: queue}
-}
-
-const defaultQueueCapacity = 8192
-
-func NewRotateHandler(path string, limit int64, num int) (Handler, error) {
-	return NewRotateHandlerUsing(path, limit, num, defaultQueueCapacity, &simpleFormatter{})
-}
-
-const errThreshold = 5                    // 再試行する限度。
-const coolDownDuration = time.Millisecond // 異常発生時に空ける間隔。
-
-func NewRotateHandlerUsing(path string, limit int64, num, queueCapacity int, formatter Formatter) (Handler, error) {
-	// ロックファイルをつくったほうが良いが、OS 依存なので今は止めとく。
-
-	// ファイルチェック。
-	file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, logPerm)
-	if err != nil {
-		return nil, erro.Wrap(err)
-	}
-	if err := file.Close(); err != nil {
-		return nil, erro.Wrap(err)
-	}
-
-	return NewGoHandler(func(done chan bool, queue chan *FormatEntry) {
-		func() {
-			defer func() {
-				if err := recover(); err != nil {
-					fmt.Fprintln(os.Stderr, err)
-				}
-			}()
-
-			for errCount := 0; errCount < errThreshold; {
-
-				// 異常が発生してたら、ちょっと落ち着く。
-				if errCount > 0 {
-					time.Sleep(coolDownDuration)
-				}
-
-				// ファイルを開く。
-				file, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, logPerm)
-				if err != nil {
-					fmt.Fprintln(os.Stderr, erro.Wrap(err))
-					errCount++
-					continue
-				}
-
-				fi, err := file.Stat()
-				if err != nil {
-					fmt.Fprintln(os.Stderr, erro.Wrap(err))
-					errCount++
-					file.Close()
-					continue
-				}
-
-				size := fi.Size()
-				writer := bufio.NewWriter(file)
-
-				// ログを取る。
-				for size <= limit { // 最大 1 エントリ分はみ出す。でも、limit == 0 でも動く。
-					ent := <-queue
-
-					if ent == FlushTrigger() {
-						err := writer.Flush()
-						if err != nil {
-							fmt.Fprintln(os.Stderr, erro.Wrap(err))
-							done <- (err == nil)
-							break
-						}
-						done <- (err == nil)
-					}
-
-					buff := formatter.Format(ent.Date, ent.File, ent.Line, ent.Lv, ent.Args...)
-					_, err := writer.Write(buff)
-					if err != nil {
-						fmt.Fprintln(os.Stderr, erro.Wrap(err))
-						break
-					}
-
-					size += int64(len(buff))
-				}
-
-				// ファイルを閉じる。
-				if err := writer.Flush(); err != nil {
-					fmt.Fprintln(os.Stderr, erro.Wrap(err))
-					errCount++
-					file.Close()
-					continue
-				}
-
-				if err := file.Close(); err != nil {
-					fmt.Fprintln(os.Stderr, erro.Wrap(err))
-					errCount++
-					continue
-				}
-
-				if size < limit { // ログを取ってるときに異常が発生してた。
-					errCount++
-					continue
-				}
-
-				// ファイルを回す。
-				if err := rotateFile(path, num); err != nil {
-					fmt.Fprintln(os.Stderr, erro.Wrap(err))
-					errCount++
-					continue
-				}
-
-				errCount = 0
+	for {
+		if hndl.file == nil {
+			// ファイルを開く。
+			if err := os.MkdirAll(filepath.Dir(hndl.path), dirPerm); err != nil {
+				return erro.Wrap(err)
 			}
 
-			fmt.Fprintln(os.Stderr, "Too many errors.")
-		}()
-
-		fmt.Fprintln(os.Stderr, "Logging into ", path, " was aborted.")
-
-		// 異常でループを抜けたら、デッドロック防止処理だけする。
-		for {
-			ent := <-queue
-			if ent == FlushTrigger() {
-				done <- false
+			var err error
+			hndl.file, err = os.OpenFile(hndl.path, os.O_RDWR|os.O_APPEND|os.O_CREATE, filePerm)
+			if err != nil {
+				return erro.Wrap(err)
 			}
+
+			stat, err := hndl.file.Stat()
+			if err != nil {
+				return erro.Wrap(err)
+			}
+			hndl.size = stat.Size()
 		}
-	}, queueCapacity), nil
+
+		// ファイルを開いている。
+
+		if hndl.size != 0 && hndl.size+int64(len(buff)) > hndl.limit { // ファイルは必ず 1 度は使う。
+			// ローテートする。
+			if err := hndl.rotate(); err != nil {
+				return erro.Wrap(err)
+			}
+			continue
+		}
+
+		if hndl.Writer == nil {
+			hndl.Writer = bufio.NewWriter(hndl.file)
+		}
+
+		// ファイルに余裕がある。
+		break
+	}
+
+	size, err := hndl.Write(buff)
+	if err != nil {
+		return erro.Wrap(err)
+	}
+
+	hndl.size += int64(size)
+	return nil
+}
+
+func (hndl *rotateCoreHandler) rotate() error {
+	if hndl.file != nil {
+		if hndl.Writer != nil {
+			if err := hndl.Flush(); err != nil {
+				return erro.Wrap(err)
+			}
+			hndl.Writer = nil
+		}
+		if err := hndl.file.Close(); err != nil {
+			return erro.Wrap(err)
+		}
+		hndl.file = nil
+		hndl.size = 0
+	}
+
+	return erro.Wrap(rotateFile(hndl.path, hndl.num))
 }
 
 func rotateFile(path string, num int) error {
@@ -231,4 +146,22 @@ func rotateFile(path string, num int) error {
 	}
 
 	return nil
+}
+
+func (hndl *rotateCoreHandler) flush() {
+	if hndl.Writer == nil {
+		return
+	}
+	if err := hndl.Writer.Flush(); err != nil {
+		err = erro.Wrap(err)
+		fmt.Fprintln(os.Stderr, err)
+	}
+}
+
+func NewRotateHandler(path string, limit int64, num int) (Handler, error) {
+	return NewRotateHandlerUsing(path, limit, num, SimpleFormatter)
+}
+
+func NewRotateHandlerUsing(path string, limit int64, num int, fmter Formatter) (Handler, error) {
+	return wrapCoreHandler(newSynchronizedCoreHandler(&rotateCoreHandler{path: path, limit: limit, num: num, Formatter: fmter})), nil
 }

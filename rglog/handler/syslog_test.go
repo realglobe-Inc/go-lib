@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestSyslogHundler(t *testing.T) {
+func _TestSyslogHundler(t *testing.T) {
 	// ただ使えるかだけ。
 
 	hndl, err := NewSyslogHandler("go-lib-rg")
@@ -13,13 +13,14 @@ func TestSyslogHundler(t *testing.T) {
 		t.Fatal(err)
 	}
 	hndl.SetLevel(level.ALL)
+
 	hndl.Output(0, level.INFO, "test")
 	hndl.Output(0, level.ERR, "test2")
 	hndl.Flush()
 }
 
 // TODO 複数のコネクションで大量にログを吐くとデッドロックする場合がある。対処法不明。
-func _TestSyslogHandler(t *testing.T) {
+func _TestManySyslogHandler(t *testing.T) {
 	n := 20
 	loop := 100
 
@@ -38,4 +39,13 @@ func _TestSyslogHandler(t *testing.T) {
 			hndls[j].Output(0, level.ERR, "a ", j, i)
 		}
 	}
+}
+
+func _BenchmarkSyslogHandler(b *testing.B) {
+	hndl, err := NewSyslogHandler("go-lib-rg")
+	if err != nil {
+		b.Fatal(err)
+	}
+	hndl.SetLevel(level.ALL)
+	benchmarkHandler(b, hndl)
 }
