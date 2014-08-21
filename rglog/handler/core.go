@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
 	"os"
+	"reflect"
 	"runtime"
 	"sync"
+	"time"
 )
-
-const defChCap = 1000
 
 // ログの書き込みを別ゴルーチンで実行できるようにするために分離。
 // 別ゴルーチンだとファイル名と行番号の取得ができないので、こんな切り分け。
@@ -24,6 +24,12 @@ type coreHandler interface {
 type synchronizedCoreHandler struct {
 	reqCh chan<- interface{}
 }
+
+const chCap = 1000
+
+// 何もリクエストが無いときに flush する間隔。
+// TODO 勝手にやるべきではないかもしれない。
+const flushInterval = time.Minute
 
 type synchronizedOutputRequest struct {
 	file string
@@ -57,7 +63,7 @@ func (hndl *synchronizedCoreHandler) close() {
 }
 
 func newSynchronizedCoreHandler(base coreHandler) coreHandler {
-	reqCh := make(chan interface{}, defChCap)
+	reqCh := make(chan interface{}, chCap)
 
 	go func() {
 		for {
@@ -73,22 +79,43 @@ func newSynchronizedCoreHandler(base coreHandler) coreHandler {
 					}
 				}()
 
-				req := <-reqCh
-				switch r := req.(type) {
-				case *synchronizedOutputRequest:
-					base.output(r.file, r.line, r.Level, r.v...)
-				case *synchronizedFlushRequest:
-					defer func() { r.ackCh <- struct{}{} }()
+				select {
+				case req := <-reqCh:
+					handleSynchronizedRequest(base, req)
+					return
+				default:
+				}
+
+				// 毎回タイマー設定するのが気持ち悪いので、本当に待つときだけ。
+				timer := time.NewTimer(flushInterval)
+				defer timer.Stop()
+
+				select {
+				case req := <-reqCh:
+					handleSynchronizedRequest(base, req)
+				case <-timer.C:
 					base.flush()
-				case *synchronizedCloseRequest:
-					defer func() { r.ackCh <- struct{}{} }()
-					base.close()
 				}
 			}()
 		}
 	}()
 
 	return &synchronizedCoreHandler{reqCh}
+}
+
+func handleSynchronizedRequest(base coreHandler, req interface{}) {
+	switch r := req.(type) {
+	case *synchronizedOutputRequest:
+		base.output(r.file, r.line, r.Level, r.v...)
+	case *synchronizedFlushRequest:
+		defer func() { r.ackCh <- struct{}{} }()
+		base.flush()
+	case *synchronizedCloseRequest:
+		defer func() { r.ackCh <- struct{}{} }()
+		base.close()
+	default:
+		panic("unknown request " + reflect.TypeOf(req).Name())
+	}
 }
 
 // coreHandler をラップして Handler にする。
