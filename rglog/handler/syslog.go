@@ -5,6 +5,7 @@ import (
 	"github.com/realglobe-Inc/go-lib-rg/erro"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
 	"log/syslog"
+	"os"
 )
 
 type syslogCoreHandler struct {
@@ -30,6 +31,15 @@ func (hndl *syslogCoreHandler) output(file string, line int, lv level.Level, v .
 
 func (hndl *syslogCoreHandler) flush() {
 	return
+}
+
+func (hndl *syslogCoreHandler) close() {
+	hndl.flush()
+
+	if err := hndl.Close(); err != nil {
+		err = erro.Wrap(err)
+		fmt.Fprintln(os.Stderr, err)
+	}
 }
 
 func NewSyslogHandler(tag string) (Handler, error) {

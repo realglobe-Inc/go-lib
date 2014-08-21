@@ -16,13 +16,13 @@ const defChCap = 1000
 type coreHandler interface {
 	output(file string, line int, lv level.Level, v ...interface{})
 	flush()
+	close()
 }
 
 // coreHandler をスレッドセーフにするラッパー。
 // ついでに別ゴルーチンでの書き込みにもなる。
 type synchronizedCoreHandler struct {
 	reqCh chan<- interface{}
-	ackCh <-chan struct{}
 }
 
 type synchronizedOutputRequest struct {
@@ -32,20 +32,32 @@ type synchronizedOutputRequest struct {
 	v []interface{}
 }
 
-type synchronizedFlushRequest struct{}
+type synchronizedFlushRequest struct {
+	ackCh chan<- struct{}
+}
+
+type synchronizedCloseRequest struct {
+	ackCh chan<- struct{}
+}
 
 func (hndl *synchronizedCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
 	hndl.reqCh <- &synchronizedOutputRequest{file, line, lv, v}
 }
 
 func (hndl *synchronizedCoreHandler) flush() {
-	hndl.reqCh <- &synchronizedFlushRequest{}
-	<-hndl.ackCh
+	ackCh := make(chan struct{}, 1)
+	hndl.reqCh <- &synchronizedFlushRequest{ackCh}
+	<-ackCh
+}
+
+func (hndl *synchronizedCoreHandler) close() {
+	ackCh := make(chan struct{}, 1)
+	hndl.reqCh <- &synchronizedCloseRequest{ackCh}
+	<-ackCh
 }
 
 func newSynchronizedCoreHandler(base coreHandler) coreHandler {
 	reqCh := make(chan interface{}, defChCap)
-	ackCh := make(chan struct{}, 1)
 
 	go func() {
 		for {
@@ -66,14 +78,17 @@ func newSynchronizedCoreHandler(base coreHandler) coreHandler {
 				case *synchronizedOutputRequest:
 					base.output(r.file, r.line, r.Level, r.v...)
 				case *synchronizedFlushRequest:
-					defer func() { ackCh <- struct{}{} }()
+					defer func() { r.ackCh <- struct{}{} }()
 					base.flush()
+				case *synchronizedCloseRequest:
+					defer func() { r.ackCh <- struct{}{} }()
+					base.close()
 				}
 			}()
 		}
 	}()
 
-	return &synchronizedCoreHandler{reqCh, ackCh}
+	return &synchronizedCoreHandler{reqCh}
 }
 
 // coreHandler をラップして Handler にする。
@@ -118,4 +133,8 @@ func (hndl *coreWrapper) Output(depth int, lv level.Level, v ...interface{}) {
 
 func (hndl *coreWrapper) Flush() {
 	hndl.flush()
+}
+
+func (hndl *coreWrapper) Close() {
+	hndl.close()
 }

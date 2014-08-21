@@ -17,6 +17,7 @@ type fluentdCoreHandler struct {
 	tag string
 
 	// fluentd サーバーへの接続端。
+	conn net.Conn
 	*bufio.Writer
 }
 
@@ -108,7 +109,19 @@ func messagePackInteger(val int64) []byte {
 }
 
 func (hndl *fluentdCoreHandler) flush() {
-	hndl.Flush()
+	if err := hndl.Flush(); err != nil {
+		err = erro.Wrap(err)
+		fmt.Fprintln(os.Stderr, err)
+	}
+}
+
+func (hndl *fluentdCoreHandler) close() {
+	hndl.flush()
+
+	if err := hndl.conn.Close(); err != nil {
+		err = erro.Wrap(err)
+		fmt.Fprintln(os.Stderr, err)
+	}
 }
 
 func NewFluentdHandler(addr, tag string) (Handler, error) {
@@ -117,5 +130,5 @@ func NewFluentdHandler(addr, tag string) (Handler, error) {
 		return nil, erro.Wrap(err)
 	}
 
-	return wrapCoreHandler(newSynchronizedCoreHandler(&fluentdCoreHandler{tag, bufio.NewWriter(conn)})), nil
+	return wrapCoreHandler(newSynchronizedCoreHandler(&fluentdCoreHandler{tag, conn, bufio.NewWriter(conn)})), nil
 }

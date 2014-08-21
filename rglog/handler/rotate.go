@@ -158,6 +158,18 @@ func (hndl *rotateCoreHandler) flush() {
 	}
 }
 
+func (hndl *rotateCoreHandler) close() {
+	hndl.flush()
+
+	if hndl.file == nil {
+		return
+	}
+	if err := hndl.file.Close(); err != nil {
+		err = erro.Wrap(err)
+		fmt.Fprintln(os.Stderr, err)
+	}
+}
+
 func NewRotateHandler(path string, limit int64, num int) (Handler, error) {
 	return NewRotateHandlerUsing(path, limit, num, SimpleFormatter)
 }

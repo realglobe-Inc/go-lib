@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/erro"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
 	"io"
@@ -70,6 +71,10 @@ func (hndl *basicHandler) Flush() {
 	return
 }
 
+func (hndl *basicHandler) Close() {
+	return
+}
+
 // 与えられた出力先にバッファを挟んで書き出すだけの Handler.
 // スレッドセーフ。
 type flushHandler struct {
@@ -81,7 +86,10 @@ func (hndl *flushHandler) Flush() {
 	hndl.Lock()
 	defer hndl.Unlock()
 
-	hndl.Writer.Flush()
+	if err := hndl.Writer.Flush(); err != nil {
+		err = erro.Wrap(err)
+		fmt.Fprintln(os.Stderr, err)
+	}
 }
 
 func NewFlushHandler(output io.Writer) Handler {
@@ -89,8 +97,39 @@ func NewFlushHandler(output io.Writer) Handler {
 }
 
 func NewFlushHandlerUsing(output io.Writer, fmter Formatter) Handler {
+	return newFlushHandlerUsing(output, fmter)
+}
+
+func newFlushHandlerUsing(output io.Writer, fmter Formatter) *flushHandler {
 	bufOutput := bufio.NewWriter(output)
 	return &flushHandler{newBasicHandlerUsing(bufOutput, fmter), bufOutput}
+}
+
+// Close にも対応。
+// スレッドセーフ。
+type closeHandler struct {
+	*flushHandler
+	io.Closer
+}
+
+func (hndl *closeHandler) Close() {
+	hndl.Lock()
+	defer hndl.Unlock()
+
+	hndl.Flush()
+
+	if err := hndl.Closer.Close(); err != nil {
+		err = erro.Wrap(err)
+		fmt.Fprintln(os.Stderr, err)
+	}
+}
+
+func NewCloseHandler(output io.WriteCloser) Handler {
+	return NewFlushHandlerUsing(output, SimpleFormatter)
+}
+
+func NewCloseHandlerUsing(output io.WriteCloser, fmter Formatter) Handler {
+	return &closeHandler{newFlushHandlerUsing(output, fmter), output}
 }
 
 // 標準エラー出力に書き出す Handler。
@@ -116,5 +155,5 @@ func NewFileHandlerUsing(path string, fmter Formatter) (Handler, error) {
 	if err != nil {
 		return nil, erro.Wrap(err)
 	}
-	return NewFlushHandlerUsing(output, fmter), nil
+	return NewCloseHandlerUsing(output, fmter), nil
 }
