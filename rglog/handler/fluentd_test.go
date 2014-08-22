@@ -16,8 +16,9 @@ func init() {
 		conn, err := net.Dial("tcp", fluentdAddr)
 		if err != nil {
 			fluentdAddr = ""
+		} else {
+			conn.Close()
 		}
-		conn.Close()
 	}
 }
 

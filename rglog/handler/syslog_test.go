@@ -16,8 +16,9 @@ func init() {
 		conn, err := syslog.New(syslog.LOG_INFO, "test")
 		if err != nil {
 			testSyslogHundlerFlag = false
+		} else {
+			conn.Close()
 		}
-		conn.Close()
 	}
 }
 
