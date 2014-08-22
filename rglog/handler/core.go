@@ -66,7 +66,8 @@ func newSynchronizedCoreHandler(base coreHandler) coreHandler {
 	reqCh := make(chan interface{}, chCap)
 
 	go func() {
-		for {
+		closed := false
+		for !closed {
 			func() { // パニックになったときも素知らぬ顔で次のリクエストを処理するために関数で括る。
 				defer func() {
 					if rcv := recover(); rcv != nil {
@@ -81,7 +82,7 @@ func newSynchronizedCoreHandler(base coreHandler) coreHandler {
 
 				select {
 				case req := <-reqCh:
-					handleSynchronizedRequest(base, req)
+					closed = handleSynchronizedRequest(base, req)
 					return
 				default:
 				}
@@ -92,7 +93,7 @@ func newSynchronizedCoreHandler(base coreHandler) coreHandler {
 
 				select {
 				case req := <-reqCh:
-					handleSynchronizedRequest(base, req)
+					closed = handleSynchronizedRequest(base, req)
 				case <-timer.C:
 					base.flush()
 				}
@@ -103,7 +104,7 @@ func newSynchronizedCoreHandler(base coreHandler) coreHandler {
 	return &synchronizedCoreHandler{reqCh}
 }
 
-func handleSynchronizedRequest(base coreHandler, req interface{}) {
+func handleSynchronizedRequest(base coreHandler, req interface{}) (closed bool) {
 	switch r := req.(type) {
 	case *synchronizedOutputRequest:
 		base.output(r.file, r.line, r.Level, r.v...)
@@ -113,9 +114,11 @@ func handleSynchronizedRequest(base coreHandler, req interface{}) {
 	case *synchronizedCloseRequest:
 		defer func() { r.ackCh <- struct{}{} }()
 		base.close()
+		return true
 	default:
 		panic("unknown request " + reflect.TypeOf(req).Name())
 	}
+	return false
 }
 
 // coreHandler をラップして Handler にする。
