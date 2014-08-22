@@ -2,10 +2,30 @@ package handler
 
 import (
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"log/syslog"
 	"testing"
 )
 
-func _TestSyslogHundler(t *testing.T) {
+// 実際テストしたかったら true に。
+var testSyslogHundlerFlag = true
+
+func init() {
+	if testSyslogHundlerFlag {
+		// 実際にサーバーが立っているかどうか調べる。
+		// 立ってなかったらテストはスキップ。
+		conn, err := syslog.New(syslog.LOG_INFO, "test")
+		if err != nil {
+			testSyslogHundlerFlag = false
+		}
+		conn.Close()
+	}
+}
+
+func TestSyslogHundler(t *testing.T) {
+	if !testSyslogHundlerFlag {
+		t.SkipNow()
+	}
+
 	// ただ使えるかだけ。
 
 	hndl, err := NewSyslogHandler("go-lib-rg")
@@ -20,7 +40,11 @@ func _TestSyslogHundler(t *testing.T) {
 }
 
 // TODO 複数のコネクションで大量にログを吐くとデッドロックする場合がある。対処法不明。
-func _TestManySyslogHandler(t *testing.T) {
+func TestManySyslogHandler(t *testing.T) {
+	if !testSyslogHundlerFlag {
+		t.SkipNow()
+	}
+
 	n := 20
 	loop := 100
 
@@ -41,7 +65,11 @@ func _TestManySyslogHandler(t *testing.T) {
 	}
 }
 
-func _BenchmarkSyslogHandler(b *testing.B) {
+func BenchmarkSyslogHandler(b *testing.B) {
+	if !testSyslogHundlerFlag {
+		b.SkipNow()
+	}
+
 	hndl, err := NewSyslogHandler("go-lib-rg")
 	if err != nil {
 		b.Fatal(err)

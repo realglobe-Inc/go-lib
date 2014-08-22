@@ -2,14 +2,31 @@ package handler
 
 import (
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"net"
 	"testing"
 )
 
 // テストしたかったら fluentd サーバーを立ててから。
 var fluentdAddr = "localhost:24224"
 
+func init() {
+	if fluentdAddr != "" {
+		// 実際にサーバーが立っているかどうか調べる。
+		// 立ってなかったらテストはスキップ。
+		conn, err := net.Dial("tcp", fluentdAddr)
+		if err != nil {
+			fluentdAddr = ""
+		}
+		conn.Close()
+	}
+}
+
 // ただ使えるかだけ。
-func _TestFluentdHundler(t *testing.T) {
+func TestFluentdHundler(t *testing.T) {
+	if fluentdAddr == "" {
+		t.SkipNow()
+	}
+
 	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
 	if err != nil {
 		t.Fatal(err)
@@ -23,7 +40,11 @@ func _TestFluentdHundler(t *testing.T) {
 
 // 色んな長さのメッセージを送る。
 // MessagePack 部分のテスト。
-func _TestFluentdHundlerMessageLength(t *testing.T) {
+func TestFluentdHundlerMessageLength(t *testing.T) {
+	if fluentdAddr == "" {
+		t.SkipNow()
+	}
+
 	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
 	if err != nil {
 		t.Fatal(err)
@@ -42,7 +63,11 @@ func _TestFluentdHundlerMessageLength(t *testing.T) {
 }
 
 // 複数接続で。
-func _TestManyFluentdHandler(t *testing.T) {
+func TestManyFluentdHandler(t *testing.T) {
+	if fluentdAddr == "" {
+		t.SkipNow()
+	}
+
 	n := 20
 	loop := 100
 
@@ -65,7 +90,11 @@ func _TestManyFluentdHandler(t *testing.T) {
 	}
 }
 
-func _BenchmarkFluentdHandler(b *testing.B) {
+func BenchmarkFluentdHandler(b *testing.B) {
+	if fluentdAddr == "" {
+		b.SkipNow()
+	}
+
 	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
 	if err != nil {
 		b.Fatal(err)
