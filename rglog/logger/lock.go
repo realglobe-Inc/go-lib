@@ -17,7 +17,7 @@ type lockLogger struct {
 	hndls     map[string]handler.Handler
 	useParent bool
 
-	mgr *lockManager // この lockLogger を作成した lockManager。
+	mgr *lockLoggerManager // この lockLogger を作成した lockLoggerManager。
 }
 
 func (log *lockLogger) Handler(key string) handler.Handler {
@@ -167,19 +167,19 @@ func (log *lockLogger) flush() {
 	}
 }
 
-type lockManager struct {
+type lockLoggerManager struct {
 	lock sync.Mutex
 
 	// マップで仮想的に木構造を扱う。どうせ深さは 10 もいかない。
 	loggers map[string]*lockLogger
 }
 
-func NewLockManager() *lockManager {
-	return &lockManager{loggers: map[string]*lockLogger{}}
+func NewLockLoggerManager() *lockLoggerManager {
+	return &lockLoggerManager{loggers: map[string]*lockLogger{}}
 }
 
 // ロックは外で。
-func (mgr *lockManager) getParent(name string) *lockLogger {
+func (mgr *lockLoggerManager) getParent(name string) *lockLogger {
 	const sep = "/"
 	for curName := name; ; {
 		pos := strings.LastIndex(curName, sep)
@@ -198,7 +198,7 @@ func (mgr *lockManager) getParent(name string) *lockLogger {
 	}
 }
 
-func (mgr *lockManager) Logger(name string) Logger {
+func (mgr *lockLoggerManager) Logger(name string) Logger {
 	mgr.lock.Lock()
 	defer mgr.lock.Unlock()
 
@@ -216,7 +216,7 @@ func (mgr *lockManager) Logger(name string) Logger {
 	return log
 }
 
-func (mgr *lockManager) Flush() {
+func (mgr *lockLoggerManager) Flush() {
 	// デッドロックしないようにマップをさらってるときに lockLogger 自体の処理はしない。
 	mgr.lock.Lock()
 

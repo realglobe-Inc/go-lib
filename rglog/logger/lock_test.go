@@ -1,197 +1,29 @@
 package logger
 
 import (
-	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"testing"
-	"time"
 )
 
-func TestLogging(t *testing.T) {
-	rootLabel := "github.com/realglobe-Inc/go-lib-rg"
-
-	loop := 100000
-	n := 100
-
-	mgr := NewLockManager()
-	rootLog := mgr.Logger(rootLabel)
-	rootLog.SetLevel(level.ALL)
-	rootLog.SetUseParent(false)
-
-	path := filepath.Join(os.TempDir(), "locklog_test")
-	if err := os.Remove(path); err != nil {
-		if !os.IsNotExist(err) {
-			t.Fatal(err)
-		}
-	}
-	defer os.Remove(path)
-
-	hndl := handler.NewRotateHandler(path, 1<<30, 10)
-	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler("test", hndl)
-
-	for i := 0; i < loop; i++ {
-		mgr.Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
-	}
-
-	mgr.Flush()
-
-	// ファイルに書き込めているかどうか検査。
-	buff, err := ioutil.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(buff) > 0 && buff[len(buff)-1] == '\n' { // 最後の空行は抜かしとく。
-		buff = buff[:len(buff)-1]
-	}
-
-	lines := strings.Split(string(buff), "\n")
-	if len(lines) != loop {
-		t.Error(len(lines), loop)
-	}
-
+func TestLockLoggerHandler(t *testing.T) {
+	testLoggerHandler(t, NewLockLoggerManager())
 }
 
-func BenchmarkLogging(b *testing.B) {
-	rootLabel := "github.com/realglobe-Inc/go-lib-rg/locklog"
-	n := 100
-
-	mgr := NewLockManager()
-	rootLog := mgr.Logger(rootLabel)
-	rootLog.SetLevel(level.ALL)
-	rootLog.SetUseParent(false)
-
-	path := filepath.Join(os.TempDir(), "locklog_test")
-	if err := os.Remove(path); err != nil {
-		if !os.IsNotExist(err) {
-			b.Fatal(err)
-		}
-	}
-	defer os.Remove(path)
-
-	hndl := handler.NewRotateHandler(path, 1<<30, 10)
-	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler("test", hndl)
-
-	for i := 0; i < b.N; i++ {
-		mgr.Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
-	}
-
-	mgr.Flush()
+func TestLockLoggerLevel(t *testing.T) {
+	testLoggerLevel(t, NewLockLoggerManager())
 }
 
-func TestConcurrent(t *testing.T) {
-	rootLabel := "github.com/realglobe-Inc/go-lib-rg"
-
-	n := 100
-	loop := 1000
-
-	mgr := NewLockManager()
-	rootLog := mgr.Logger(rootLabel)
-	rootLog.SetLevel(level.ALL)
-	rootLog.SetUseParent(false)
-
-	path := filepath.Join(os.TempDir(), "locklog_test")
-	if err := os.Remove(path); err != nil {
-		if !os.IsNotExist(err) {
-			t.Fatal(err)
-		}
-	}
-	defer os.Remove(path)
-
-	hndl := handler.NewRotateHandler(path, 1<<30, 10)
-	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler("test", hndl)
-
-	c := make(chan bool)
-	timeout := time.After(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
-
-	for i := 0; i < n; i++ {
-		id := i
-		go func() {
-			for j := 0; j < loop; j++ {
-				mgr.Logger(rootLabel+"/"+strconv.Itoa(id)).Info(id, j)
-			}
-
-			c <- true
-		}()
-	}
-
-	for i := 0; i < n; i++ {
-		select {
-		case <-c:
-		case <-timeout:
-			t.Fatal("Dead lock?")
-		}
-	}
-
-	mgr.Flush()
-
-	// ファイルに書き込めているかどうか検査。
-	buff, err := ioutil.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(buff) > 0 && buff[len(buff)-1] == '\n' { // 最後の空行は抜かしとく。
-		buff = buff[:len(buff)-1]
-	}
-
-	lines := strings.Split(string(buff), "\n")
-	if len(lines) != n*loop {
-		t.Error(len(lines), n*loop)
-	}
-
+func TestLockLoggerUseParent(t *testing.T) {
+	testLoggerUseParent(t, NewLockLoggerManager())
 }
 
-func BenchmarkConcurrent(b *testing.B) {
-	rootLabel := "github.com/realglobe-Inc/go-lib-rg"
-	n := 100
+func TestLockLoggerIsLoggable(t *testing.T) {
+	testLoggerIsLoggable(t, NewLockLoggerManager())
+}
 
-	mgr := NewLockManager()
-	rootLog := mgr.Logger(rootLabel)
-	rootLog.SetLevel(level.ALL)
-	rootLog.SetUseParent(false)
+func TestLockLoggerConcurrent(t *testing.T) {
+	testLoggerConcurrent(t, NewLockLoggerManager())
+}
 
-	path := filepath.Join(os.TempDir(), "locklog_test")
-	if err := os.Remove(path); err != nil {
-		if !os.IsNotExist(err) {
-			b.Fatal(err)
-		}
-	}
-	defer os.Remove(path)
-
-	hndl := handler.NewRotateHandler(path, 1<<30, 10)
-	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler("test", hndl)
-
-	c := make(chan bool)
-	timeout := time.After(time.Duration(int64(n*b.N*100) * int64(time.Microsecond)))
-
-	for i := 0; i < n; i++ {
-		id := i
-		go func() {
-			for j := 0; j < b.N/n; j++ {
-				mgr.Logger(rootLabel+"/"+strconv.Itoa(id)).Info(id, j)
-			}
-
-			c <- true
-		}()
-	}
-
-	for i := 0; i < n; i++ {
-		select {
-		case <-c:
-		case <-timeout:
-			b.Fatal("Dead lock?")
-		}
-	}
-
-	mgr.Flush()
+func BenchmarkLockLoggerConcurrent(b *testing.B) {
+	benchmarkLoggerConcurrent(b, NewLockLoggerManager())
 }

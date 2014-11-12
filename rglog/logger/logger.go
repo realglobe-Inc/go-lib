@@ -33,3 +33,8 @@ type Logger interface {
 	Info(v ...interface{})
 	Debug(v ...interface{})
 }
+
+type Manager interface {
+	Logger(name string) Logger
+	Flush()
+}

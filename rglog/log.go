@@ -10,16 +10,11 @@ import (
 // handler 書き出し機。
 // logger ハンドラをまとめたり、親子関係をつくったり。
 
-type Manager interface {
-	Logger(name string) logger.Logger
-	Flush()
-}
-
-var mgr Manager
+var mgr logger.Manager
 
 // 標準を設定。
 func init() {
-	mgr = logger.NewLockManager()
+	mgr = logger.NewLockLoggerManager()
 }
 
 func init() {
