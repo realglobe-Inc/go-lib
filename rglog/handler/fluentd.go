@@ -14,7 +14,8 @@ import (
 // fluentd の in_forward にログを流す coreHandler。
 type fluentdCoreHandler struct {
 	// fluentd の tag。
-	tag string
+	tag  string
+	addr string
 
 	// fluentd サーバーへの接続端。
 	conn net.Conn
@@ -64,8 +65,24 @@ func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v 
 	buff = append(buff, messagePackString("message")...)
 	buff = append(buff, messagePackString(msg)...)
 
+	// fluentd が一時的に落ちていても、動き出せば元通りに動くように。
+	if hndl.conn == nil {
+		var err error
+		hndl.conn, err = net.Dial("tcp", hndl.addr)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		hndl.sink = bufio.NewWriter(hndl.conn)
+	}
+
 	if _, err := hndl.sink.Write(buff); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, erro.Wrap(err))
+		if err := hndl.conn.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, erro.Wrap(err))
+		}
+		hndl.conn = nil
+		hndl.sink = nil
 	}
 }
 
@@ -109,6 +126,9 @@ func messagePackInteger(val int64) []byte {
 }
 
 func (hndl *fluentdCoreHandler) flush() {
+	if hndl.sink == nil {
+		return
+	}
 	if err := hndl.sink.Flush(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
@@ -116,19 +136,22 @@ func (hndl *fluentdCoreHandler) flush() {
 }
 
 func (hndl *fluentdCoreHandler) close() {
+	defer func() {
+		hndl.conn = nil
+		hndl.sink = nil
+	}()
+
 	hndl.flush()
 
+	if hndl.conn == nil {
+		return
+	}
 	if err := hndl.conn.Close(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func NewFluentdHandler(addr, tag string) (Handler, error) {
-	conn, err := net.Dial("tcp", addr)
-	if err != nil {
-		return nil, erro.Wrap(err)
-	}
-
-	return wrapCoreHandler(newSynchronizedCoreHandler(&fluentdCoreHandler{tag, conn, bufio.NewWriter(conn)})), nil
+func NewFluentdHandler(addr, tag string) Handler {
+	return wrapCoreHandler(newSynchronizedCoreHandler(&fluentdCoreHandler{tag: tag, addr: addr}))
 }

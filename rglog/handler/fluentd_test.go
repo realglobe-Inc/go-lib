@@ -28,10 +28,7 @@ func TestFluentdHundler(t *testing.T) {
 		t.SkipNow()
 	}
 
-	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 	defer hndl.Flush()
 
 	hndl.SetLevel(level.ALL)
@@ -46,10 +43,7 @@ func TestFluentdHundlerMessageLength(t *testing.T) {
 		t.SkipNow()
 	}
 
-	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 	defer hndl.Flush()
 
 	hndl.SetLevel(level.ALL)
@@ -74,10 +68,7 @@ func TestManyFluentdHandler(t *testing.T) {
 
 	hndls := []Handler{}
 	for i := 0; i < n; i++ {
-		hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
-		if err != nil {
-			t.Fatal(err)
-		}
+		hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 		defer hndl.Flush()
 
 		hndl.SetLevel(level.ALL)
@@ -96,9 +87,6 @@ func BenchmarkFluentdHandler(b *testing.B) {
 		b.SkipNow()
 	}
 
-	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
-	if err != nil {
-		b.Fatal(err)
-	}
+	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 	benchmarkHandler(b, hndl)
 }
