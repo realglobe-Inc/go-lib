@@ -6,12 +6,13 @@ import (
 )
 
 type Logger interface {
-	// 登録されているハンドラ一覧を取得する。
-	Handlers() []handler.Handler
-	// ハンドラを追加する。
-	AddHandler(hndl handler.Handler)
-	// ハンドラを削除する。
-	RemoveHandler(hndl handler.Handler)
+	// 登録してあるハンドラを取得する。
+	Handler(key string) handler.Handler
+	// ハンドラを登録する。
+	// 既に同じ key でハンドラが登録してあったら、新しい方に置き換えて、古い方を返す。
+	AddHandler(key string, hndl handler.Handler) (oldHndl handler.Handler)
+	// ハンドラを登録から外す。
+	RemoveHandler(key string) (oldHndl handler.Handler)
 
 	// ハンドラに処理させる重要度の下限を返す。
 	Level() level.Level

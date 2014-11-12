@@ -29,7 +29,7 @@ func init() {
 
 	hndl := handler.NewConsoleHandler()
 	hndl.SetLevel(level.INFO)
-	log.AddHandler(hndl)
+	log.AddHandler("console", hndl)
 }
 
 // 各パッケージの init で 1 回だけ呼ぶくらいを想定。

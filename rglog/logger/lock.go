@@ -14,36 +14,35 @@ type lockLogger struct {
 	name string
 
 	lv        level.Level
-	hndls     map[handler.Handler]bool
+	hndls     map[string]handler.Handler
 	useParent bool
 
 	mgr *lockManager // この lockLogger を作成した lockManager。
 }
 
-func (log *lockLogger) Handlers() []handler.Handler {
+func (log *lockLogger) Handler(key string) handler.Handler {
 	log.lock.Lock()
 	defer log.lock.Unlock()
 
-	hndls := []handler.Handler{}
-	for hndl, _ := range log.hndls {
-		hndls = append(hndls, hndl)
-	}
-
-	return hndls
+	return log.hndls[key]
 }
 
-func (log *lockLogger) AddHandler(hndl handler.Handler) {
+func (log *lockLogger) AddHandler(key string, hndl handler.Handler) handler.Handler {
 	log.lock.Lock()
 	defer log.lock.Unlock()
 
-	log.hndls[hndl] = true
+	old := log.hndls[key]
+	log.hndls[key] = hndl
+	return old
 }
 
-func (log *lockLogger) RemoveHandler(hndl handler.Handler) {
+func (log *lockLogger) RemoveHandler(key string) handler.Handler {
 	log.lock.Lock()
 	defer log.lock.Unlock()
 
-	delete(log.hndls, hndl)
+	old := log.hndls[key]
+	delete(log.hndls, key)
+	return old
 }
 
 func (log *lockLogger) Level() level.Level {
@@ -90,7 +89,7 @@ func (log *lockLogger) logging(lv level.Level, v ...interface{}) {
 	for {
 
 		if lv <= cur.lv {
-			for hndl, _ := range cur.hndls {
+			for _, hndl := range cur.hndls {
 				hndl.Output(2, lv, v...)
 			}
 		}
@@ -123,7 +122,7 @@ func (log *lockLogger) flush() {
 	log.lock.Lock()
 	defer log.lock.Unlock()
 
-	for hndl, _ := range log.hndls {
+	for _, hndl := range log.hndls {
 		hndl.Flush()
 	}
 }
@@ -168,7 +167,7 @@ func (mgr *lockManager) Logger(name string) Logger {
 		log = &lockLogger{
 			name:      name,
 			useParent: true,
-			hndls:     make(map[handler.Handler]bool),
+			hndls:     make(map[string]handler.Handler),
 			mgr:       mgr,
 		}
 		mgr.loggers[name] = log

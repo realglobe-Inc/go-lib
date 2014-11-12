@@ -32,7 +32,7 @@ func TestLog(t *testing.T) {
 
 	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler(hndl)
+	rootLog.AddHandler("test", hndl)
 
 	for i := 0; i < loop; i++ {
 		Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
@@ -77,7 +77,7 @@ func TestConcurrent(t *testing.T) {
 
 	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler(hndl)
+	rootLog.AddHandler("test", hndl)
 
 	c := make(chan bool)
 	timeout := time.After(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))

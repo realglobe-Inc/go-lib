@@ -33,7 +33,7 @@ func TestLogging(t *testing.T) {
 
 	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler(hndl)
+	rootLog.AddHandler("test", hndl)
 
 	for i := 0; i < loop; i++ {
 		mgr.Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
@@ -77,7 +77,7 @@ func BenchmarkLogging(b *testing.B) {
 
 	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler(hndl)
+	rootLog.AddHandler("test", hndl)
 
 	for i := 0; i < b.N; i++ {
 		mgr.Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
@@ -107,7 +107,7 @@ func TestConcurrent(t *testing.T) {
 
 	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler(hndl)
+	rootLog.AddHandler("test", hndl)
 
 	c := make(chan bool)
 	timeout := time.After(time.Duration(int64(n*loop*100) * int64(time.Microsecond)))
@@ -169,7 +169,7 @@ func BenchmarkConcurrent(b *testing.B) {
 
 	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
-	rootLog.AddHandler(hndl)
+	rootLog.AddHandler("test", hndl)
 
 	c := make(chan bool)
 	timeout := time.After(time.Duration(int64(n*b.N*100) * int64(time.Microsecond)))
