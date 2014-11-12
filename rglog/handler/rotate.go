@@ -171,10 +171,10 @@ func (hndl *rotateCoreHandler) close() {
 	}
 }
 
-func NewRotateHandler(path string, limit int64, num int) (Handler, error) {
+func NewRotateHandler(path string, limit int64, num int) Handler {
 	return NewRotateHandlerUsing(path, limit, num, SimpleFormatter)
 }
 
-func NewRotateHandlerUsing(path string, limit int64, num int, fmter Formatter) (Handler, error) {
-	return wrapCoreHandler(newSynchronizedCoreHandler(&rotateCoreHandler{path: path, limit: limit, num: num, fmter: fmter})), nil
+func NewRotateHandlerUsing(path string, limit int64, num int, fmter Formatter) Handler {
+	return wrapCoreHandler(newSynchronizedCoreHandler(&rotateCoreHandler{path: path, limit: limit, num: num, fmter: fmter}))
 }

@@ -31,10 +31,7 @@ func TestLogging(t *testing.T) {
 	}
 	defer os.Remove(path)
 
-	hndl, err := handler.NewRotateHandler(path, 1<<30, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
@@ -78,10 +75,7 @@ func BenchmarkLogging(b *testing.B) {
 	}
 	defer os.Remove(path)
 
-	hndl, err := handler.NewRotateHandler(path, 1<<30, 10)
-	if err != nil {
-		b.Fatal(err)
-	}
+	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
@@ -111,10 +105,7 @@ func TestConcurrent(t *testing.T) {
 	}
 	defer os.Remove(path)
 
-	hndl, err := handler.NewRotateHandler(path, 1<<30, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
@@ -176,10 +167,7 @@ func BenchmarkConcurrent(b *testing.B) {
 	}
 	defer os.Remove(path)
 
-	hndl, err := handler.NewRotateHandler(path, 1<<30, 10)
-	if err != nil {
-		b.Fatal(err)
-	}
+	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 

@@ -30,10 +30,7 @@ func TestLog(t *testing.T) {
 	}
 	defer os.Remove(path)
 
-	hndl, err := handler.NewRotateHandler(path, 1<<30, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 
@@ -78,10 +75,7 @@ func TestConcurrent(t *testing.T) {
 	}
 	defer os.Remove(path)
 
-	hndl, err := handler.NewRotateHandler(path, 1<<30, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := handler.NewRotateHandler(path, 1<<30, 10)
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler(hndl)
 

@@ -32,10 +32,7 @@ func TestRotateHandlerRotation(t *testing.T) {
 		t.Fatal(err)
 	}
 	num := 100
-	hndl, err := NewRotateHandler(path, 0, num)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := NewRotateHandler(path, 0, num)
 	defer os.Remove(path)
 	for i := 1; i <= num; i++ {
 		defer os.Remove(path + "." + strconv.Itoa(i))
@@ -62,10 +59,7 @@ func TestRotateHandlerLogging(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	hndl, err := NewRotateHandler(path, 1<<20, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := NewRotateHandler(path, 1<<20, 0)
 	defer os.Remove(path)
 
 	n := 1000
@@ -95,10 +89,7 @@ func BenchmarkRotateHandler(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	hndl, err := NewRotateHandler(path, 1<<20, 10)
-	if err != nil {
-		b.Fatal(err)
-	}
+	hndl := NewRotateHandler(path, 1<<20, 10)
 	defer os.Remove(path)
 	for i := 1; i <= 10; i++ {
 		defer os.Remove(path + "." + strconv.Itoa(i))
