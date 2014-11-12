@@ -16,33 +16,33 @@ import (
 // 与えられた出力先に書き出すだけの Handler.
 // スレッドセーフ。
 type basicHandler struct {
-	sync.Mutex
-	level.Level
-	Formatter
+	lock  sync.Mutex
+	lv    level.Level
+	fmter Formatter
 
-	io.Writer
+	sink io.Writer
 }
 
-func NewBasicHandler(output io.Writer) Handler {
-	return NewBasicHandlerUsing(output, SimpleFormatter)
+func NewBasicHandler(sink io.Writer) Handler {
+	return NewBasicHandlerUsing(sink, SimpleFormatter)
 }
 
-func NewBasicHandlerUsing(output io.Writer, fmter Formatter) Handler {
-	return newBasicHandlerUsing(output, fmter)
+func NewBasicHandlerUsing(sink io.Writer, fmter Formatter) Handler {
+	return newBasicHandlerUsing(sink, fmter)
 }
 
-func newBasicHandlerUsing(output io.Writer, fmter Formatter) *basicHandler {
-	return &basicHandler{Formatter: fmter, Writer: output}
+func newBasicHandlerUsing(sink io.Writer, fmter Formatter) *basicHandler {
+	return &basicHandler{fmter: fmter, sink: sink}
 }
 
 func (hndl *basicHandler) Output(depth int, lv level.Level, v ...interface{}) {
-	hndl.Lock()
-	defer hndl.Unlock()
+	hndl.lock.Lock()
+	defer hndl.lock.Unlock()
 
-	if lv > hndl.Level {
+	if lv > hndl.lv {
 		return
 	}
-	hndl.Unlock()
+	hndl.lock.Unlock()
 
 	// この辺は標準の log.Output を参考にした。
 	// release lock while getting caller info - it's expensive.
@@ -54,17 +54,17 @@ func (hndl *basicHandler) Output(depth int, lv level.Level, v ...interface{}) {
 		file = "???"
 		line = 0
 	}
-	buff := hndl.Format(date, file, line, lv, v...)
+	buff := hndl.fmter.Format(date, file, line, lv, v...)
 
-	hndl.Lock()
-	hndl.Write(buff)
+	hndl.lock.Lock()
+	hndl.sink.Write(buff)
 }
 
 func (hndl *basicHandler) SetLevel(lv level.Level) {
-	hndl.Lock()
-	defer hndl.Unlock()
+	hndl.lock.Lock()
+	defer hndl.lock.Unlock()
 
-	hndl.Level = lv
+	hndl.lv = lv
 }
 
 func (hndl *basicHandler) Flush() {
@@ -79,57 +79,57 @@ func (hndl *basicHandler) Close() {
 // スレッドセーフ。
 type flushHandler struct {
 	*basicHandler
-	*bufio.Writer
+	flusher *bufio.Writer
 }
 
 func (hndl *flushHandler) Flush() {
-	hndl.Lock()
-	defer hndl.Unlock()
+	hndl.lock.Lock()
+	defer hndl.lock.Unlock()
 
-	if err := hndl.Writer.Flush(); err != nil {
+	if err := hndl.flusher.Flush(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func NewFlushHandler(output io.Writer) Handler {
-	return NewFlushHandlerUsing(output, SimpleFormatter)
+func NewFlushHandler(sink io.Writer) Handler {
+	return NewFlushHandlerUsing(sink, SimpleFormatter)
 }
 
-func NewFlushHandlerUsing(output io.Writer, fmter Formatter) Handler {
-	return newFlushHandlerUsing(output, fmter)
+func NewFlushHandlerUsing(sink io.Writer, fmter Formatter) Handler {
+	return newFlushHandlerUsing(sink, fmter)
 }
 
-func newFlushHandlerUsing(output io.Writer, fmter Formatter) *flushHandler {
-	bufOutput := bufio.NewWriter(output)
-	return &flushHandler{newBasicHandlerUsing(bufOutput, fmter), bufOutput}
+func newFlushHandlerUsing(sink io.Writer, fmter Formatter) *flushHandler {
+	bufSink := bufio.NewWriter(sink)
+	return &flushHandler{newBasicHandlerUsing(bufSink, fmter), bufSink}
 }
 
 // Close にも対応。
 // スレッドセーフ。
 type closeHandler struct {
 	*flushHandler
-	io.Closer
+	closer io.Closer
 }
 
 func (hndl *closeHandler) Close() {
-	hndl.Lock()
-	defer hndl.Unlock()
+	hndl.lock.Lock()
+	defer hndl.lock.Unlock()
 
 	hndl.Flush()
 
-	if err := hndl.Closer.Close(); err != nil {
+	if err := hndl.closer.Close(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func NewCloseHandler(output io.WriteCloser) Handler {
-	return NewFlushHandlerUsing(output, SimpleFormatter)
+func NewCloseHandler(sink io.WriteCloser) Handler {
+	return NewFlushHandlerUsing(sink, SimpleFormatter)
 }
 
-func NewCloseHandlerUsing(output io.WriteCloser, fmter Formatter) Handler {
-	return &closeHandler{newFlushHandlerUsing(output, fmter), output}
+func NewCloseHandlerUsing(sink io.WriteCloser, fmter Formatter) Handler {
+	return &closeHandler{newFlushHandlerUsing(sink, fmter), sink}
 }
 
 // 標準エラー出力に書き出す Handler。
@@ -151,9 +151,9 @@ func NewFileHandlerUsing(path string, fmter Formatter) (Handler, error) {
 		return nil, erro.Wrap(err)
 	}
 	// file の Close はプログラムの終処理任せ。
-	output, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, filePerm)
+	sink, err := os.OpenFile(path, os.O_RDWR|os.O_APPEND|os.O_CREATE, filePerm)
 	if err != nil {
 		return nil, erro.Wrap(err)
 	}
-	return NewCloseHandlerUsing(output, fmter), nil
+	return NewCloseHandlerUsing(sink, fmter), nil
 }

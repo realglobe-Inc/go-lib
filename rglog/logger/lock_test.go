@@ -1,4 +1,4 @@
-package locklog
+package logger
 
 import (
 	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
@@ -18,7 +18,8 @@ func TestLogging(t *testing.T) {
 	loop := 100000
 	n := 100
 
-	rootLog := Logger(rootLabel)
+	mgr := NewLockManager()
+	rootLog := mgr.Logger(rootLabel)
 	rootLog.SetLevel(level.ALL)
 	rootLog.SetUseParent(false)
 
@@ -38,10 +39,10 @@ func TestLogging(t *testing.T) {
 	rootLog.AddHandler(hndl)
 
 	for i := 0; i < loop; i++ {
-		Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
+		mgr.Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
 	}
 
-	Flush()
+	mgr.Flush()
 
 	// ファイルに書き込めているかどうか検査。
 	buff, err := ioutil.ReadFile(path)
@@ -64,7 +65,8 @@ func BenchmarkLogging(b *testing.B) {
 	rootLabel := "github.com/realglobe-Inc/go-lib-rg/locklog"
 	n := 100
 
-	rootLog := Logger(rootLabel)
+	mgr := NewLockManager()
+	rootLog := mgr.Logger(rootLabel)
 	rootLog.SetLevel(level.ALL)
 	rootLog.SetUseParent(false)
 
@@ -84,10 +86,10 @@ func BenchmarkLogging(b *testing.B) {
 	rootLog.AddHandler(hndl)
 
 	for i := 0; i < b.N; i++ {
-		Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
+		mgr.Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
 	}
 
-	Flush()
+	mgr.Flush()
 }
 
 func TestConcurrent(t *testing.T) {
@@ -96,7 +98,8 @@ func TestConcurrent(t *testing.T) {
 	n := 100
 	loop := 1000
 
-	rootLog := Logger(rootLabel)
+	mgr := NewLockManager()
+	rootLog := mgr.Logger(rootLabel)
 	rootLog.SetLevel(level.ALL)
 	rootLog.SetUseParent(false)
 
@@ -122,7 +125,7 @@ func TestConcurrent(t *testing.T) {
 		id := i
 		go func() {
 			for j := 0; j < loop; j++ {
-				Logger(rootLabel+"/"+strconv.Itoa(id)).Info(id, j)
+				mgr.Logger(rootLabel+"/"+strconv.Itoa(id)).Info(id, j)
 			}
 
 			c <- true
@@ -137,7 +140,7 @@ func TestConcurrent(t *testing.T) {
 		}
 	}
 
-	Flush()
+	mgr.Flush()
 
 	// ファイルに書き込めているかどうか検査。
 	buff, err := ioutil.ReadFile(path)
@@ -160,7 +163,8 @@ func BenchmarkConcurrent(b *testing.B) {
 	rootLabel := "github.com/realglobe-Inc/go-lib-rg"
 	n := 100
 
-	rootLog := Logger(rootLabel)
+	mgr := NewLockManager()
+	rootLog := mgr.Logger(rootLabel)
 	rootLog.SetLevel(level.ALL)
 	rootLog.SetUseParent(false)
 
@@ -186,7 +190,7 @@ func BenchmarkConcurrent(b *testing.B) {
 		id := i
 		go func() {
 			for j := 0; j < b.N/n; j++ {
-				Logger(rootLabel+"/"+strconv.Itoa(id)).Info(id, j)
+				mgr.Logger(rootLabel+"/"+strconv.Itoa(id)).Info(id, j)
 			}
 
 			c <- true
@@ -201,5 +205,5 @@ func BenchmarkConcurrent(b *testing.B) {
 		}
 	}
 
-	Flush()
+	mgr.Flush()
 }

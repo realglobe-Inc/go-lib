@@ -18,7 +18,7 @@ func TestLog(t *testing.T) {
 	loop := 100000
 	n := 100
 
-	rootLog := GetLogger(rootLabel)
+	rootLog := Logger(rootLabel)
 	rootLog.SetLevel(level.ALL)
 	rootLog.SetUseParent(false)
 
@@ -38,7 +38,7 @@ func TestLog(t *testing.T) {
 	rootLog.AddHandler(hndl)
 
 	for i := 0; i < loop; i++ {
-		GetLogger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
+		Logger(rootLabel + "/" + strconv.Itoa(i%n)).Info(i)
 	}
 
 	Flush()
@@ -66,7 +66,7 @@ func TestConcurrent(t *testing.T) {
 	n := 100
 	loop := 1000
 
-	rootLog := GetLogger(rootLabel)
+	rootLog := Logger(rootLabel)
 	rootLog.SetLevel(level.ALL)
 	rootLog.SetUseParent(false)
 
@@ -92,7 +92,7 @@ func TestConcurrent(t *testing.T) {
 		id := i
 		go func() {
 			for j := 0; j < loop; j++ {
-				GetLogger(rootLabel+"/"+strconv.Itoa(id)).Info(id, j)
+				Logger(rootLabel+"/"+strconv.Itoa(id)).Info(id, j)
 			}
 
 			c <- true

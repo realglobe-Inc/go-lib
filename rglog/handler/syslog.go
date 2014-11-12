@@ -9,7 +9,7 @@ import (
 )
 
 type syslogCoreHandler struct {
-	*syslog.Writer
+	base *syslog.Writer
 }
 
 func (hndl *syslogCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
@@ -19,13 +19,13 @@ func (hndl *syslogCoreHandler) output(file string, line int, lv level.Level, v .
 
 	switch lv {
 	case level.ERR:
-		hndl.Err(msg)
+		hndl.base.Err(msg)
 	case level.WARN:
-		hndl.Warning(msg)
+		hndl.base.Warning(msg)
 	case level.INFO:
-		hndl.Info(msg)
+		hndl.base.Info(msg)
 	case level.DEBUG:
-		hndl.Debug(msg)
+		hndl.base.Debug(msg)
 	}
 }
 
@@ -36,7 +36,7 @@ func (hndl *syslogCoreHandler) flush() {
 func (hndl *syslogCoreHandler) close() {
 	hndl.flush()
 
-	if err := hndl.Close(); err != nil {
+	if err := hndl.base.Close(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}

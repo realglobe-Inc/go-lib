@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -54,6 +55,18 @@ type simpleFormatter struct{}
 
 var SimpleFormatter = &simpleFormatter{}
 
+// Level の最短幅。
+var lvWidth int
+
+func init() {
+	lvWidth = 10
+	for _, lv := range level.Values() {
+		if w := len(lv.String()); w < lvWidth {
+			lvWidth = w
+		}
+	}
+}
+
 func (formatter simpleFormatter) Format(date time.Time, file string, line int, lv level.Level, v ...interface{}) []byte {
 	year, month, day := date.Date()
 	hour, min, sec := date.Clock()
@@ -61,8 +74,7 @@ func (formatter simpleFormatter) Format(date time.Time, file string, line int, l
 
 	file = trimPrefix(file)
 
-	// Level は最短長固定幅。
-	msg := fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d.%06d %.3v %s:%d %s\n",
+	msg := fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d.%06d %."+strconv.Itoa(lvWidth)+"v %s:%d %s\n",
 		year, int(month), day, hour, min, sec, microSec, lv, file, line, fmt.Sprint(v...))
 
 	return []byte(msg)
@@ -74,6 +86,6 @@ type levelOnlyFormatter struct{}
 var LevelOnlyFormatter = &levelOnlyFormatter{}
 
 func (formatter levelOnlyFormatter) Format(date time.Time, file string, line int, lv level.Level, v ...interface{}) []byte {
-	msg := fmt.Sprintf("[%.3v] %s\n", lv, fmt.Sprint(v...))
+	msg := fmt.Sprintf("[%."+strconv.Itoa(lvWidth)+"v] %s\n", lv, fmt.Sprint(v...))
 	return []byte(msg)
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/erro"
-	"github.com/realglobe-Inc/go-lib-rg/rglog"
 	"github.com/realglobe-Inc/go-lib-rg/run"
 	"io/ioutil"
 	"os"
@@ -13,12 +12,6 @@ import (
 	"strconv"
 	"time"
 )
-
-var log rglog.Logger
-
-func init() {
-	log = rglog.GetLogger("github.com/realglobe-Inc/go-lib-rg/file")
-}
 
 // ファイル・ディレクトリに関するユーティリティ。
 

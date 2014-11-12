@@ -18,7 +18,7 @@ type fluentdCoreHandler struct {
 
 	// fluentd サーバーへの接続端。
 	conn net.Conn
-	*bufio.Writer
+	sink *bufio.Writer
 }
 
 func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
@@ -64,7 +64,7 @@ func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v 
 	buff = append(buff, messagePackString("message")...)
 	buff = append(buff, messagePackString(msg)...)
 
-	if _, err := hndl.Write(buff); err != nil {
+	if _, err := hndl.sink.Write(buff); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
@@ -109,7 +109,7 @@ func messagePackInteger(val int64) []byte {
 }
 
 func (hndl *fluentdCoreHandler) flush() {
-	if err := hndl.Flush(); err != nil {
+	if err := hndl.sink.Flush(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}

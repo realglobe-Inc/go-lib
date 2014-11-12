@@ -16,7 +16,8 @@ const (
 	dirPerm              = 0755
 )
 
-// ファイルにログを書き込み、一杯になったらそのファイルをバックアップしてから初期化する coreHandler。
+// ファイルにログを書き込み、一杯になったらそのファイルをバックアップしてから
+// 真っ新にしてまた書き込む coreHandler。
 type rotateCoreHandler struct {
 	// ログファイルのパス。
 	path string
@@ -25,7 +26,7 @@ type rotateCoreHandler struct {
 	// ログファイルを最大でいくつバックアップするか。
 	num int
 	// ログの書式。
-	Formatter
+	fmter Formatter
 
 	// 以下、作業用データ。
 
@@ -34,7 +35,7 @@ type rotateCoreHandler struct {
 	// 今のサイズ。
 	size int64
 	// 書き込み口。
-	*bufio.Writer
+	sink *bufio.Writer
 }
 
 func (hndl *rotateCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
@@ -47,7 +48,7 @@ func (hndl *rotateCoreHandler) output(file string, line int, lv level.Level, v .
 func (hndl *rotateCoreHandler) outputCore(file string, line int, lv level.Level, v ...interface{}) error {
 	// ロックファイルをつくったほうが良いが、OS 依存なので止めとく。
 
-	buff := hndl.Formatter.Format(time.Now(), file, line, lv, v...)
+	buff := hndl.fmter.Format(time.Now(), file, line, lv, v...)
 
 	for {
 		if hndl.file == nil {
@@ -79,15 +80,15 @@ func (hndl *rotateCoreHandler) outputCore(file string, line int, lv level.Level,
 			continue
 		}
 
-		if hndl.Writer == nil {
-			hndl.Writer = bufio.NewWriter(hndl.file)
+		if hndl.sink == nil {
+			hndl.sink = bufio.NewWriter(hndl.file)
 		}
 
 		// ファイルに余裕がある。
 		break
 	}
 
-	size, err := hndl.Write(buff)
+	size, err := hndl.sink.Write(buff)
 	if err != nil {
 		return erro.Wrap(err)
 	}
@@ -98,11 +99,11 @@ func (hndl *rotateCoreHandler) outputCore(file string, line int, lv level.Level,
 
 func (hndl *rotateCoreHandler) rotate() error {
 	if hndl.file != nil {
-		if hndl.Writer != nil {
-			if err := hndl.Flush(); err != nil {
+		if hndl.sink != nil {
+			if err := hndl.sink.Flush(); err != nil {
 				return erro.Wrap(err)
 			}
-			hndl.Writer = nil
+			hndl.sink = nil
 		}
 		if err := hndl.file.Close(); err != nil {
 			return erro.Wrap(err)
@@ -149,10 +150,10 @@ func rotateFile(path string, num int) error {
 }
 
 func (hndl *rotateCoreHandler) flush() {
-	if hndl.Writer == nil {
+	if hndl.sink == nil {
 		return
 	}
-	if err := hndl.Writer.Flush(); err != nil {
+	if err := hndl.sink.Flush(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
@@ -175,5 +176,5 @@ func NewRotateHandler(path string, limit int64, num int) (Handler, error) {
 }
 
 func NewRotateHandlerUsing(path string, limit int64, num int, fmter Formatter) (Handler, error) {
-	return wrapCoreHandler(newSynchronizedCoreHandler(&rotateCoreHandler{path: path, limit: limit, num: num, Formatter: fmter})), nil
+	return wrapCoreHandler(newSynchronizedCoreHandler(&rotateCoreHandler{path: path, limit: limit, num: num, fmter: fmter})), nil
 }
