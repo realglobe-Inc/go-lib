@@ -19,8 +19,14 @@ type Logger interface {
 	// ハンドラに処理させる重要度の下限を指定する。
 	SetLevel(lv level.Level)
 
-	// GetLogger に渡す name が / で区切られた木構造を表すとして、親の Logger にも処理させるかどうか。
+	// 識別子を / 区切りの木構造として、親の識別子のロガーにも処理させるかどうか。
+	UseParent() bool
+	// 識別子を / 区切りの木構造として、親の識別子のロガーにも処理させるかどうかを指定する。
 	SetUseParent(useParent bool)
+
+	// 指定した重要度でログを取ったら、ハンドラに処理させるかどうか。
+	// UseParent が true な限りの先祖ロガーも含む。
+	IsLoggable(lv level.Level) bool
 
 	Err(v ...interface{})
 	Warn(v ...interface{})

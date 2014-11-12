@@ -59,11 +59,51 @@ func (log *lockLogger) SetLevel(lv level.Level) {
 	log.lv = lv
 }
 
+func (log *lockLogger) UseParent() bool {
+	log.lock.Lock()
+	defer log.lock.Unlock()
+
+	return log.useParent
+}
+
 func (log *lockLogger) SetUseParent(useParent bool) {
 	log.lock.Lock()
 	defer log.lock.Unlock()
 
 	log.useParent = useParent
+}
+
+func (log *lockLogger) IsLoggable(lv level.Level) bool {
+	cur := log
+
+	cur.lock.Lock()
+	for {
+
+		if lv <= cur.lv {
+			if len(cur.hndls) > 0 {
+				cur.lock.Unlock()
+				return true
+			}
+		}
+
+		if !cur.useParent {
+			cur.lock.Unlock()
+			return false
+		}
+
+		cur.mgr.lock.Lock() // ロック結合。logging を参照。
+		cur.lock.Unlock()
+
+		newCur := cur.mgr.getParent(cur.name)
+		if newCur == nil {
+			cur.mgr.lock.Unlock()
+			return false
+		}
+		cur = newCur
+
+		cur.lock.Lock() // ロック結合。
+		cur.mgr.lock.Unlock()
+	}
 }
 
 func (log *lockLogger) Err(v ...interface{}) {
