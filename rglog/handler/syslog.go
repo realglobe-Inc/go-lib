@@ -9,6 +9,8 @@ import (
 )
 
 type syslogCoreHandler struct {
+	tag string
+
 	base *syslog.Writer
 }
 
@@ -17,15 +19,33 @@ func (core *syslogCoreHandler) output(file string, line int, lv level.Level, v .
 	// 日時は syslog が付ける。
 	msg := fmt.Sprintf("%.3v %s:%d %s\n", lv, file, line, fmt.Sprint(v...))
 
+	// ログデーモンが一時的に落ちていても、動き出せば元通りに動くように。
+	if core.base == nil {
+		var err error
+		core.base, err = syslog.New(syslog.LOG_INFO, core.tag)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+	}
+
+	var err error
 	switch lv {
 	case level.ERR:
-		core.base.Err(msg)
+		err = core.base.Err(msg)
 	case level.WARN:
-		core.base.Warning(msg)
+		err = core.base.Warning(msg)
 	case level.INFO:
-		core.base.Info(msg)
+		err = core.base.Info(msg)
 	case level.DEBUG:
-		core.base.Debug(msg)
+		err = core.base.Debug(msg)
+	}
+	if err != nil {
+		fmt.Fprintln(os.Stderr, erro.Wrap(err))
+		if err := core.base.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, erro.Wrap(err))
+		}
+		core.base = nil
 	}
 }
 
@@ -42,18 +62,6 @@ func (core *syslogCoreHandler) close() {
 	}
 }
 
-func NewSyslogHandler(tag string) (Handler, error) {
-	conn, err := syslog.New(syslog.LOG_INFO, tag)
-	if err != nil {
-		return nil, erro.Wrap(err)
-	}
-	return wrapCoreHandler(newSynchronizedCoreHandler(&syslogCoreHandler{conn})), nil
-}
-
-func NewSyslogHandlerOf(tag, prot, addr string) (Handler, error) {
-	conn, err := syslog.Dial(prot, addr, syslog.LOG_INFO, tag)
-	if err != nil {
-		return nil, erro.Wrap(err)
-	}
-	return wrapCoreHandler(newSynchronizedCoreHandler(&syslogCoreHandler{conn})), nil
+func NewSyslogHandler(tag string) Handler {
+	return wrapCoreHandler(newSynchronizedCoreHandler(&syslogCoreHandler{tag: tag}))
 }
