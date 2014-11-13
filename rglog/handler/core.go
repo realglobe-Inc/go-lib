@@ -12,7 +12,7 @@ import (
 
 // ログの書き込みを別ゴルーチンで実行できるようにするために分離。
 // 別ゴルーチンだとファイル名と行番号の取得ができないので、こんな切り分け。
-// この部分をスレッドセーフに実装する必要はない。
+// synchronizedCoreHandler でラップして使うので、この部分をスレッドセーフに実装する必要はない。
 type coreHandler interface {
 	output(file string, line int, lv level.Level, v ...interface{})
 	flush()
@@ -21,14 +21,16 @@ type coreHandler interface {
 
 // coreHandler をスレッドセーフにするラッパー。
 // ついでに別ゴルーチンでの書き込みにもなる。
+// output はノンブロッキング。
+// flush, close はブロッキング。
 type synchronizedCoreHandler struct {
 	reqCh chan<- interface{}
 }
 
+// 書き出し待機させる最大数。
 const chCap = 1000
 
-// 何もリクエストが無いときに flush する間隔。
-// TODO 勝手にやるべきではないかもしれない。
+// やることが無いときに flush する間隔。
 const flushInterval = time.Minute
 
 type synchronizedOutputRequest struct {
