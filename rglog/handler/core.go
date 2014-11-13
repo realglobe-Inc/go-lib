@@ -46,19 +46,19 @@ type synchronizedCloseRequest struct {
 	ackCh chan<- struct{}
 }
 
-func (hndl *synchronizedCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
-	hndl.reqCh <- &synchronizedOutputRequest{file, line, lv, v}
+func (core *synchronizedCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+	core.reqCh <- &synchronizedOutputRequest{file, line, lv, v}
 }
 
-func (hndl *synchronizedCoreHandler) flush() {
+func (core *synchronizedCoreHandler) flush() {
 	ackCh := make(chan struct{}, 1)
-	hndl.reqCh <- &synchronizedFlushRequest{ackCh}
+	core.reqCh <- &synchronizedFlushRequest{ackCh}
 	<-ackCh
 }
 
-func (hndl *synchronizedCoreHandler) close() {
+func (core *synchronizedCoreHandler) close() {
 	ackCh := make(chan struct{}, 1)
-	hndl.reqCh <- &synchronizedCloseRequest{ackCh}
+	core.reqCh <- &synchronizedCloseRequest{ackCh}
 	<-ackCh
 }
 
@@ -131,8 +131,8 @@ type coreWrapper struct {
 	base coreHandler
 }
 
-func wrapCoreHandler(hndl coreHandler) Handler {
-	return &coreWrapper{base: hndl}
+func wrapCoreHandler(core coreHandler) Handler {
+	return &coreWrapper{base: core}
 }
 
 func (hndl *coreWrapper) SetLevel(lv level.Level) {

@@ -38,81 +38,81 @@ type rotateCoreHandler struct {
 	sink *bufio.Writer
 }
 
-func (hndl *rotateCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
-	if err := hndl.outputCore(file, line, lv, v...); err != nil {
+func (core *rotateCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+	if err := core.outputCore(file, line, lv, v...); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func (hndl *rotateCoreHandler) outputCore(file string, line int, lv level.Level, v ...interface{}) error {
+func (core *rotateCoreHandler) outputCore(file string, line int, lv level.Level, v ...interface{}) error {
 	// ロックファイルをつくったほうが良いが、OS 依存なので止めとく。
 
-	buff := hndl.fmter.Format(time.Now(), file, line, lv, v...)
+	buff := core.fmter.Format(time.Now(), file, line, lv, v...)
 
 	for {
-		if hndl.file == nil {
+		if core.file == nil {
 			// ファイルを開く。
-			if err := os.MkdirAll(filepath.Dir(hndl.path), dirPerm); err != nil {
+			if err := os.MkdirAll(filepath.Dir(core.path), dirPerm); err != nil {
 				return erro.Wrap(err)
 			}
 
 			var err error
-			hndl.file, err = os.OpenFile(hndl.path, os.O_RDWR|os.O_APPEND|os.O_CREATE, filePerm)
+			core.file, err = os.OpenFile(core.path, os.O_RDWR|os.O_APPEND|os.O_CREATE, filePerm)
 			if err != nil {
 				return erro.Wrap(err)
 			}
 
-			stat, err := hndl.file.Stat()
+			stat, err := core.file.Stat()
 			if err != nil {
 				return erro.Wrap(err)
 			}
-			hndl.size = stat.Size()
+			core.size = stat.Size()
 		}
 
 		// ファイルを開いている。
 
-		if hndl.size != 0 && hndl.size+int64(len(buff)) > hndl.limit { // ファイルは必ず 1 度は使う。
+		if core.size != 0 && core.size+int64(len(buff)) > core.limit { // ファイルは必ず 1 度は使う。
 			// ローテートする。
-			if err := hndl.rotate(); err != nil {
+			if err := core.rotate(); err != nil {
 				return erro.Wrap(err)
 			}
 			continue
 		}
 
-		if hndl.sink == nil {
-			hndl.sink = bufio.NewWriter(hndl.file)
+		if core.sink == nil {
+			core.sink = bufio.NewWriter(core.file)
 		}
 
 		// ファイルに余裕がある。
 		break
 	}
 
-	size, err := hndl.sink.Write(buff)
+	size, err := core.sink.Write(buff)
 	if err != nil {
 		return erro.Wrap(err)
 	}
 
-	hndl.size += int64(size)
+	core.size += int64(size)
 	return nil
 }
 
-func (hndl *rotateCoreHandler) rotate() error {
-	if hndl.file != nil {
-		if hndl.sink != nil {
-			if err := hndl.sink.Flush(); err != nil {
+func (core *rotateCoreHandler) rotate() error {
+	if core.file != nil {
+		if core.sink != nil {
+			if err := core.sink.Flush(); err != nil {
 				return erro.Wrap(err)
 			}
-			hndl.sink = nil
+			core.sink = nil
 		}
-		if err := hndl.file.Close(); err != nil {
+		if err := core.file.Close(); err != nil {
 			return erro.Wrap(err)
 		}
-		hndl.file = nil
-		hndl.size = 0
+		core.file = nil
+		core.size = 0
 	}
 
-	return erro.Wrap(rotateFile(hndl.path, hndl.num))
+	return erro.Wrap(rotateFile(core.path, core.num))
 }
 
 func rotateFile(path string, num int) error {
@@ -149,23 +149,23 @@ func rotateFile(path string, num int) error {
 	return nil
 }
 
-func (hndl *rotateCoreHandler) flush() {
-	if hndl.sink == nil {
+func (core *rotateCoreHandler) flush() {
+	if core.sink == nil {
 		return
 	}
-	if err := hndl.sink.Flush(); err != nil {
+	if err := core.sink.Flush(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func (hndl *rotateCoreHandler) close() {
-	hndl.flush()
+func (core *rotateCoreHandler) close() {
+	core.flush()
 
-	if hndl.file == nil {
+	if core.file == nil {
 		return
 	}
-	if err := hndl.file.Close(); err != nil {
+	if err := core.file.Close(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}

@@ -22,7 +22,7 @@ type fluentdCoreHandler struct {
 	sink *bufio.Writer
 }
 
-func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+func (core *fluentdCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
 	// 形式は JSON で書けば、
 	//
 	// [
@@ -46,7 +46,7 @@ func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v 
 	// fixarray 3.
 	buff := []byte{0x90 | 3}
 
-	buff = append(buff, messagePackString(hndl.tag)...)
+	buff = append(buff, messagePackString(core.tag)...)
 
 	buff = append(buff, messagePackInteger(date)...)
 
@@ -66,23 +66,23 @@ func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v 
 	buff = append(buff, messagePackString(msg)...)
 
 	// fluentd が一時的に落ちていても、動き出せば元通りに動くように。
-	if hndl.conn == nil {
+	if core.conn == nil {
 		var err error
-		hndl.conn, err = net.Dial("tcp", hndl.addr)
+		core.conn, err = net.Dial("tcp", core.addr)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return
 		}
-		hndl.sink = bufio.NewWriter(hndl.conn)
+		core.sink = bufio.NewWriter(core.conn)
 	}
 
-	if _, err := hndl.sink.Write(buff); err != nil {
+	if _, err := core.sink.Write(buff); err != nil {
 		fmt.Fprintln(os.Stderr, erro.Wrap(err))
-		if err := hndl.conn.Close(); err != nil {
+		if err := core.conn.Close(); err != nil {
 			fmt.Fprintln(os.Stderr, erro.Wrap(err))
 		}
-		hndl.conn = nil
-		hndl.sink = nil
+		core.conn = nil
+		core.sink = nil
 	}
 }
 
@@ -125,28 +125,28 @@ func messagePackInteger(val int64) []byte {
 	return buff
 }
 
-func (hndl *fluentdCoreHandler) flush() {
-	if hndl.sink == nil {
+func (core *fluentdCoreHandler) flush() {
+	if core.sink == nil {
 		return
 	}
-	if err := hndl.sink.Flush(); err != nil {
+	if err := core.sink.Flush(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func (hndl *fluentdCoreHandler) close() {
+func (core *fluentdCoreHandler) close() {
 	defer func() {
-		hndl.conn = nil
-		hndl.sink = nil
+		core.conn = nil
+		core.sink = nil
 	}()
 
-	hndl.flush()
+	core.flush()
 
-	if hndl.conn == nil {
+	if core.conn == nil {
 		return
 	}
-	if err := hndl.conn.Close(); err != nil {
+	if err := core.conn.Close(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
