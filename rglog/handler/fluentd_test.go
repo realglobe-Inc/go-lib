@@ -23,7 +23,7 @@ func init() {
 }
 
 // ただ使えるかだけ。
-func TestFluentdHundler(t *testing.T) {
+func TestFluentdHandler(t *testing.T) {
 	if fluentdAddr == "" {
 		t.SkipNow()
 	}
@@ -38,7 +38,7 @@ func TestFluentdHundler(t *testing.T) {
 
 // 色んな長さのメッセージを送る。
 // MessagePack 部分のテスト。
-func TestFluentdHundlerMessageLength(t *testing.T) {
+func TestFluentdHandlerMessageLength(t *testing.T) {
 	if fluentdAddr == "" {
 		t.SkipNow()
 	}

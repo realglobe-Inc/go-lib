@@ -7,23 +7,23 @@ import (
 )
 
 // 実際テストしたかったら true に。
-var testSyslogHundlerFlag = true
+var testSyslogHandlerFlag = true
 
 func init() {
-	if testSyslogHundlerFlag {
+	if testSyslogHandlerFlag {
 		// 実際にサーバーが立っているかどうか調べる。
 		// 立ってなかったらテストはスキップ。
 		conn, err := syslog.New(syslog.LOG_INFO, "test")
 		if err != nil {
-			testSyslogHundlerFlag = false
+			testSyslogHandlerFlag = false
 		} else {
 			conn.Close()
 		}
 	}
 }
 
-func TestSyslogHundler(t *testing.T) {
-	if !testSyslogHundlerFlag {
+func TestSyslogHandler(t *testing.T) {
+	if !testSyslogHandlerFlag {
 		t.SkipNow()
 	}
 
@@ -42,7 +42,7 @@ func TestSyslogHundler(t *testing.T) {
 
 // TODO 複数のコネクションで大量にログを吐くとデッドロックする場合がある。対処法不明。
 func TestManySyslogHandler(t *testing.T) {
-	if !testSyslogHundlerFlag {
+	if !testSyslogHandlerFlag {
 		t.SkipNow()
 	}
 
@@ -67,7 +67,7 @@ func TestManySyslogHandler(t *testing.T) {
 }
 
 func BenchmarkSyslogHandler(b *testing.B) {
-	if !testSyslogHundlerFlag {
+	if !testSyslogHandlerFlag {
 		b.SkipNow()
 	}
 
