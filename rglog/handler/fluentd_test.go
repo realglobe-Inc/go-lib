@@ -22,18 +22,12 @@ func init() {
 	}
 }
 
-// ただ使えるかだけ。
 func TestFluentdHandler(t *testing.T) {
 	if fluentdAddr == "" {
 		t.SkipNow()
 	}
 
-	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
-	defer hndl.Flush()
-
-	hndl.SetLevel(level.ALL)
-	hndl.Output(0, level.INFO, "test")
-	hndl.Output(0, level.ERR, "test2")
+	testHandler(t, NewFluentdHandler(fluentdAddr, "rglog.test"))
 }
 
 // 色んな長さのメッセージを送る。

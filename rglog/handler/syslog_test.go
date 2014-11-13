@@ -27,17 +27,11 @@ func TestSyslogHandler(t *testing.T) {
 		t.SkipNow()
 	}
 
-	// ただ使えるかだけ。
-
 	hndl, err := NewSyslogHandler("go-lib-rg")
 	if err != nil {
 		t.Fatal(err)
 	}
-	hndl.SetLevel(level.ALL)
-
-	hndl.Output(0, level.INFO, "test")
-	hndl.Output(0, level.ERR, "test2")
-	hndl.Flush()
+	testHandler(t, hndl)
 }
 
 // TODO 複数のコネクションで大量にログを吐くとデッドロックする場合がある。対処法不明。
