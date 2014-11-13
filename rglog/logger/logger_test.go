@@ -3,7 +3,6 @@ package logger
 import (
 	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -19,7 +18,7 @@ func testLoggerHandler(t *testing.T, mgr Manager) {
 		t.Error(hndl)
 	}
 
-	memHndl := handler.NewMemoryHandler()
+	memHndl := handler.NewNopHandler()
 	if hndl := log.AddHandler("test", memHndl); hndl != nil {
 		t.Error(hndl)
 	}
@@ -29,7 +28,7 @@ func testLoggerHandler(t *testing.T, mgr Manager) {
 		t.Error(oldHndl, memHndl)
 	}
 
-	memHndl = handler.NewMemoryHandler()
+	memHndl = handler.NewNopHandler()
 	if hndl := log.AddHandler("test", memHndl); hndl != oldHndl {
 		t.Error(hndl, oldHndl)
 	}
@@ -83,7 +82,7 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 		t.Error("true: no handler, no handler")
 	}
 
-	log.AddHandler("test", handler.NewMemoryHandler())
+	log.AddHandler("test", handler.NewNopHandler())
 
 	// 基準重要度より低い、先祖にハンドラが無い。
 	if log.IsLoggable(level.DEBUG) {
@@ -96,7 +95,7 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 	}
 
 	log.RemoveHandler("test")
-	parentLog.AddHandler("test", handler.NewMemoryHandler())
+	parentLog.AddHandler("test", handler.NewNopHandler())
 	parentLog.SetLevel(level.WARN)
 
 	// ハンドラが無い、先祖の基準重要度より低い。
@@ -104,7 +103,7 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 		t.Error("true: no handler, lower level")
 	}
 
-	log.AddHandler("test", handler.NewMemoryHandler())
+	log.AddHandler("test", handler.NewNopHandler())
 
 	// 基準重要度より低い、先祖の基準重要度より低い。
 	if log.IsLoggable(level.DEBUG) {
@@ -117,7 +116,7 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 	}
 
 	log.RemoveHandler("test")
-	parentLog.AddHandler("test", handler.NewMemoryHandler())
+	parentLog.AddHandler("test", handler.NewNopHandler())
 	parentLog.SetLevel(level.DEBUG)
 
 	// ハンドラが無い、先祖の基準重要度より高い。
@@ -125,7 +124,7 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 		t.Error("false: no handler, upper level")
 	}
 
-	log.AddHandler("test", handler.NewMemoryHandler())
+	log.AddHandler("test", handler.NewNopHandler())
 
 	// 基準重要度より低い、先祖の基準重要度より高い。
 	if !log.IsLoggable(level.DEBUG) {
@@ -213,7 +212,7 @@ func benchmarkLoggerConcurrent(b *testing.B, mgr Manager) {
 	}
 	defer os.Remove(path)
 
-	hndl := handler.NewBasicHandler(ioutil.Discard)
+	hndl := handler.NewNopHandler()
 	hndl.SetLevel(level.DEBUG)
 	rootLog.AddHandler("test", hndl)
 
