@@ -91,7 +91,7 @@ func (log *lockLogger) IsLoggable(lv level.Level) bool {
 			return false
 		}
 
-		cur.mgr.lock.Lock() // ロック結合。logging を参照。
+		cur.mgr.lock.Lock() // ロック結合。Log を参照。
 		cur.lock.Unlock()
 
 		newCur := cur.mgr.getParent(cur.name)
@@ -106,23 +106,7 @@ func (log *lockLogger) IsLoggable(lv level.Level) bool {
 	}
 }
 
-func (log *lockLogger) Err(v ...interface{}) {
-	log.logging(level.ERR, v...)
-}
-
-func (log *lockLogger) Warn(v ...interface{}) {
-	log.logging(level.WARN, v...)
-}
-
-func (log *lockLogger) Info(v ...interface{}) {
-	log.logging(level.INFO, v...)
-}
-
-func (log *lockLogger) Debug(v ...interface{}) {
-	log.logging(level.DEBUG, v...)
-}
-
-func (log *lockLogger) logging(lv level.Level, v ...interface{}) {
+func (log *lockLogger) Log(lv level.Level, v ...interface{}) {
 	cur := log
 
 	cur.lock.Lock()
@@ -156,6 +140,22 @@ func (log *lockLogger) logging(lv level.Level, v ...interface{}) {
 		cur.lock.Lock() // ロック結合。
 		cur.mgr.lock.Unlock()
 	}
+}
+
+func (log *lockLogger) Err(v ...interface{}) {
+	log.Log(level.ERR, v...)
+}
+
+func (log *lockLogger) Warn(v ...interface{}) {
+	log.Log(level.WARN, v...)
+}
+
+func (log *lockLogger) Info(v ...interface{}) {
+	log.Log(level.INFO, v...)
+}
+
+func (log *lockLogger) Debug(v ...interface{}) {
+	log.Log(level.DEBUG, v...)
 }
 
 func (log *lockLogger) flush() {

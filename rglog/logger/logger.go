@@ -28,9 +28,15 @@ type Logger interface {
 	// UseParent が true な限りの先祖ロガーも含む。
 	IsLoggable(lv level.Level) bool
 
+	// ログを取る。
+	Log(lv level.Level, v ...interface{})
+	// Log(level.ERR, v...) と一緒。
 	Err(v ...interface{})
+	// Log(level.WARN, v...) と一緒。
 	Warn(v ...interface{})
+	// Log(level.INFO, v...) と一緒。
 	Info(v ...interface{})
+	// Log(level.DEBUG, v...) と一緒。
 	Debug(v ...interface{})
 }
 
