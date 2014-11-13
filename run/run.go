@@ -3,17 +3,10 @@ package run
 import (
 	"bytes"
 	"github.com/realglobe-Inc/go-lib-rg/erro"
-	"github.com/realglobe-Inc/go-lib-rg/rglog"
 	"os"
 	"os/exec"
 	"strings"
 )
-
-var log rglog.Logger
-
-func init() {
-	log = rglog.GetLogger("github.com/realglobe-Inc/go-lib-rg/run")
-}
 
 // 会話型。
 func Run(args ...string) error {

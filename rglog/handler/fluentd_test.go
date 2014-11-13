@@ -22,34 +22,22 @@ func init() {
 	}
 }
 
-// ただ使えるかだけ。
-func TestFluentdHundler(t *testing.T) {
+func TestFluentdHandler(t *testing.T) {
 	if fluentdAddr == "" {
 		t.SkipNow()
 	}
 
-	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer hndl.Flush()
-
-	hndl.SetLevel(level.ALL)
-	hndl.Output(0, level.INFO, "test")
-	hndl.Output(0, level.ERR, "test2")
+	testHandler(t, NewFluentdHandler(fluentdAddr, "rglog.test"))
 }
 
 // 色んな長さのメッセージを送る。
 // MessagePack 部分のテスト。
-func TestFluentdHundlerMessageLength(t *testing.T) {
+func TestFluentdHandlerMessageLength(t *testing.T) {
 	if fluentdAddr == "" {
 		t.SkipNow()
 	}
 
-	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
-	if err != nil {
-		t.Fatal(err)
-	}
+	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 	defer hndl.Flush()
 
 	hndl.SetLevel(level.ALL)
@@ -74,10 +62,7 @@ func TestManyFluentdHandler(t *testing.T) {
 
 	hndls := []Handler{}
 	for i := 0; i < n; i++ {
-		hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
-		if err != nil {
-			t.Fatal(err)
-		}
+		hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 		defer hndl.Flush()
 
 		hndl.SetLevel(level.ALL)
@@ -96,9 +81,6 @@ func BenchmarkFluentdHandler(b *testing.B) {
 		b.SkipNow()
 	}
 
-	hndl, err := NewFluentdHandler(fluentdAddr, "rglog.test")
-	if err != nil {
-		b.Fatal(err)
-	}
+	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 	benchmarkHandler(b, hndl)
 }

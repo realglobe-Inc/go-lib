@@ -12,7 +12,7 @@ import (
 
 // ログの書き込みを別ゴルーチンで実行できるようにするために分離。
 // 別ゴルーチンだとファイル名と行番号の取得ができないので、こんな切り分け。
-// この部分をスレッドセーフに実装する必要はない。
+// synchronizedCoreHandler でラップして使うので、この部分をスレッドセーフに実装する必要はない。
 type coreHandler interface {
 	output(file string, line int, lv level.Level, v ...interface{})
 	flush()
@@ -21,14 +21,16 @@ type coreHandler interface {
 
 // coreHandler をスレッドセーフにするラッパー。
 // ついでに別ゴルーチンでの書き込みにもなる。
+// output はノンブロッキング。
+// flush, close はブロッキング。
 type synchronizedCoreHandler struct {
 	reqCh chan<- interface{}
 }
 
+// 書き出し待機させる最大数。
 const chCap = 1000
 
-// 何もリクエストが無いときに flush する間隔。
-// TODO 勝手にやるべきではないかもしれない。
+// やることが無いときに flush する間隔。
 const flushInterval = time.Minute
 
 type synchronizedOutputRequest struct {
@@ -46,19 +48,19 @@ type synchronizedCloseRequest struct {
 	ackCh chan<- struct{}
 }
 
-func (hndl *synchronizedCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
-	hndl.reqCh <- &synchronizedOutputRequest{file, line, lv, v}
+func (core *synchronizedCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+	core.reqCh <- &synchronizedOutputRequest{file, line, lv, v}
 }
 
-func (hndl *synchronizedCoreHandler) flush() {
+func (core *synchronizedCoreHandler) flush() {
 	ackCh := make(chan struct{}, 1)
-	hndl.reqCh <- &synchronizedFlushRequest{ackCh}
+	core.reqCh <- &synchronizedFlushRequest{ackCh}
 	<-ackCh
 }
 
-func (hndl *synchronizedCoreHandler) close() {
+func (core *synchronizedCoreHandler) close() {
 	ackCh := make(chan struct{}, 1)
-	hndl.reqCh <- &synchronizedCloseRequest{ackCh}
+	core.reqCh <- &synchronizedCloseRequest{ackCh}
 	<-ackCh
 }
 
@@ -124,31 +126,31 @@ func handleSynchronizedRequest(base coreHandler, req interface{}) (closed bool) 
 // coreHandler をラップして Handler にする。
 // ファイル名と行番号を取得しつつスレッドセーフにするためにロックが必要。
 type coreWrapper struct {
-	sync.Mutex
-	level.Level
+	lock sync.Mutex
+	lv   level.Level
 
 	// スレッドセーフに使いたいなら、こいつをスレッドセーフにしとく必要あり。
-	coreHandler
+	base coreHandler
 }
 
-func wrapCoreHandler(hndl coreHandler) Handler {
-	return &coreWrapper{coreHandler: hndl}
+func wrapCoreHandler(core coreHandler) Handler {
+	return &coreWrapper{base: core}
 }
 
 func (hndl *coreWrapper) SetLevel(lv level.Level) {
-	hndl.Lock()
-	defer hndl.Unlock()
+	hndl.lock.Lock()
+	defer hndl.lock.Unlock()
 
-	hndl.Level = lv
+	hndl.lv = lv
 }
 
 func (hndl *coreWrapper) Output(depth int, lv level.Level, v ...interface{}) {
-	hndl.Lock()
-	if lv > hndl.Level {
-		hndl.Unlock()
+	hndl.lock.Lock()
+	if lv > hndl.lv {
+		hndl.lock.Unlock()
 		return
 	}
-	hndl.Unlock()
+	hndl.lock.Unlock()
 
 	_, file, line, ok := runtime.Caller(depth + 1)
 	if ok {
@@ -158,13 +160,13 @@ func (hndl *coreWrapper) Output(depth int, lv level.Level, v ...interface{}) {
 		line = 0
 	}
 
-	hndl.output(file, line, lv, v...)
+	hndl.base.output(file, line, lv, v...)
 }
 
 func (hndl *coreWrapper) Flush() {
-	hndl.flush()
+	hndl.base.flush()
 }
 
 func (hndl *coreWrapper) Close() {
-	hndl.close()
+	hndl.base.close()
 }

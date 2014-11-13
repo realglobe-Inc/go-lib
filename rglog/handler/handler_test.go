@@ -5,8 +5,20 @@ import (
 	"testing"
 )
 
+func testHandler(t *testing.T, hndl Handler) {
+	// ただ走らせるだけ、確認できない。
+	// panic で止まらないことの確認くらいにはなる。
+	for _, lv := range level.Values() {
+		hndl.SetLevel(lv)
+		hndl.Output(1, lv, "test", lv)
+	}
+
+	hndl.Flush()
+	hndl.Close()
+}
+
 func benchmarkHandler(b *testing.B, hndl Handler) {
-	defer hndl.Flush()
+	defer hndl.Close()
 	hndl.SetLevel(level.ALL)
 
 	b.ResetTimer()

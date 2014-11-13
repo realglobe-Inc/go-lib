@@ -14,14 +14,15 @@ import (
 // fluentd の in_forward にログを流す coreHandler。
 type fluentdCoreHandler struct {
 	// fluentd の tag。
-	tag string
+	tag  string
+	addr string
 
 	// fluentd サーバーへの接続端。
 	conn net.Conn
-	*bufio.Writer
+	sink *bufio.Writer
 }
 
-func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+func (core *fluentdCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
 	// 形式は JSON で書けば、
 	//
 	// [
@@ -45,7 +46,7 @@ func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v 
 	// fixarray 3.
 	buff := []byte{0x90 | 3}
 
-	buff = append(buff, messagePackString(hndl.tag)...)
+	buff = append(buff, messagePackString(core.tag)...)
 
 	buff = append(buff, messagePackInteger(date)...)
 
@@ -64,8 +65,24 @@ func (hndl *fluentdCoreHandler) output(file string, line int, lv level.Level, v 
 	buff = append(buff, messagePackString("message")...)
 	buff = append(buff, messagePackString(msg)...)
 
-	if _, err := hndl.Write(buff); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	// fluentd が一時的に落ちていても、動き出せば元通りに動くように。
+	if core.conn == nil {
+		var err error
+		core.conn, err = net.Dial("tcp", core.addr)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		core.sink = bufio.NewWriter(core.conn)
+	}
+
+	if _, err := core.sink.Write(buff); err != nil {
+		fmt.Fprintln(os.Stderr, erro.Wrap(err))
+		if err := core.conn.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, erro.Wrap(err))
+		}
+		core.conn = nil
+		core.sink = nil
 	}
 }
 
@@ -108,27 +125,33 @@ func messagePackInteger(val int64) []byte {
 	return buff
 }
 
-func (hndl *fluentdCoreHandler) flush() {
-	if err := hndl.Flush(); err != nil {
+func (core *fluentdCoreHandler) flush() {
+	if core.sink == nil {
+		return
+	}
+	if err := core.sink.Flush(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func (hndl *fluentdCoreHandler) close() {
-	hndl.flush()
+func (core *fluentdCoreHandler) close() {
+	defer func() {
+		core.conn = nil
+		core.sink = nil
+	}()
 
-	if err := hndl.conn.Close(); err != nil {
+	core.flush()
+
+	if core.conn == nil {
+		return
+	}
+	if err := core.conn.Close(); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
 	}
 }
 
-func NewFluentdHandler(addr, tag string) (Handler, error) {
-	conn, err := net.Dial("tcp", addr)
-	if err != nil {
-		return nil, erro.Wrap(err)
-	}
-
-	return wrapCoreHandler(newSynchronizedCoreHandler(&fluentdCoreHandler{tag, conn, bufio.NewWriter(conn)})), nil
+func NewFluentdHandler(addr, tag string) Handler {
+	return wrapCoreHandler(newSynchronizedCoreHandler(&fluentdCoreHandler{tag: tag, addr: addr}))
 }

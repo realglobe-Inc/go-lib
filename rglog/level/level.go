@@ -7,7 +7,7 @@ import (
 type Level int
 
 const (
-	// 表示レベル無指定なら OFF (0) になるので、何も出力しない。
+	// 表示レベル無指定 0 なら OFF になるので、何も出力しない。
 	OFF Level = iota
 
 	ERR
@@ -44,12 +44,13 @@ func (lv Level) String() string {
 	return lvToLabel[val]
 }
 
+// 文字列から値に。
 func ValueOf(label string) (Level, error) {
 	lv, ok := labelToLv[label]
 	if ok {
 		return lv, nil
 	} else {
-		return 0, erro.New("level '", label, "' is not exist.")
+		return 0, erro.New("level " + label + " is not exist.")
 	}
 }
 
@@ -75,6 +76,7 @@ func (v levelVar) Set(s string) error {
 	return nil
 }
 
+// flags.Var(Var(&param, level.INFO), "level", "Log level.") の形で使う。
 func Var(lv *Level, defaultLv Level) levelVar {
 	*lv = defaultLv
 	return levelVar{lv}

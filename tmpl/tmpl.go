@@ -3,18 +3,11 @@ package tmpl
 import (
 	"bytes"
 	"github.com/realglobe-Inc/go-lib-rg/erro"
-	"github.com/realglobe-Inc/go-lib-rg/rglog"
 	"io"
 	"os"
 	"path/filepath"
 	"text/template"
 )
-
-var log rglog.Logger
-
-func init() {
-	log = rglog.GetLogger("github.com/realglobe-Inc/go-lib-rg/tmpl")
-}
 
 const dirPerm = 0755
 

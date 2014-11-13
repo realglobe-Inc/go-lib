@@ -7,42 +7,32 @@ import (
 )
 
 // 実際テストしたかったら true に。
-var testSyslogHundlerFlag = true
+var testSyslogHandlerFlag = true
 
 func init() {
-	if testSyslogHundlerFlag {
+	if testSyslogHandlerFlag {
 		// 実際にサーバーが立っているかどうか調べる。
 		// 立ってなかったらテストはスキップ。
 		conn, err := syslog.New(syslog.LOG_INFO, "test")
 		if err != nil {
-			testSyslogHundlerFlag = false
+			testSyslogHandlerFlag = false
 		} else {
 			conn.Close()
 		}
 	}
 }
 
-func TestSyslogHundler(t *testing.T) {
-	if !testSyslogHundlerFlag {
+func TestSyslogHandler(t *testing.T) {
+	if !testSyslogHandlerFlag {
 		t.SkipNow()
 	}
 
-	// ただ使えるかだけ。
-
-	hndl, err := NewSyslogHandler("go-lib-rg")
-	if err != nil {
-		t.Fatal(err)
-	}
-	hndl.SetLevel(level.ALL)
-
-	hndl.Output(0, level.INFO, "test")
-	hndl.Output(0, level.ERR, "test2")
-	hndl.Flush()
+	testHandler(t, NewSyslogHandler("go-lib-rg"))
 }
 
 // TODO 複数のコネクションで大量にログを吐くとデッドロックする場合がある。対処法不明。
 func TestManySyslogHandler(t *testing.T) {
-	if !testSyslogHundlerFlag {
+	if !testSyslogHandlerFlag {
 		t.SkipNow()
 	}
 
@@ -51,10 +41,7 @@ func TestManySyslogHandler(t *testing.T) {
 
 	hndls := []Handler{}
 	for i := 0; i < n; i++ {
-		hndl, err := NewSyslogHandler("a")
-		if err != nil {
-			t.Fatal(err)
-		}
+		hndl := NewSyslogHandler("a")
 		hndl.SetLevel(level.ALL)
 		hndls = append(hndls, hndl)
 	}
@@ -67,14 +54,9 @@ func TestManySyslogHandler(t *testing.T) {
 }
 
 func BenchmarkSyslogHandler(b *testing.B) {
-	if !testSyslogHundlerFlag {
+	if !testSyslogHandlerFlag {
 		b.SkipNow()
 	}
 
-	hndl, err := NewSyslogHandler("go-lib-rg")
-	if err != nil {
-		b.Fatal(err)
-	}
-	hndl.SetLevel(level.ALL)
-	benchmarkHandler(b, hndl)
+	benchmarkHandler(b, NewSyslogHandler("go-lib-rg"))
 }
