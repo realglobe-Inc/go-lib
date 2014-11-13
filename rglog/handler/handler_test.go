@@ -18,7 +18,7 @@ func testHandler(t *testing.T, hndl Handler) {
 }
 
 func benchmarkHandler(b *testing.B, hndl Handler) {
-	defer hndl.Flush()
+	defer hndl.Close()
 	hndl.SetLevel(level.ALL)
 
 	b.ResetTimer()
