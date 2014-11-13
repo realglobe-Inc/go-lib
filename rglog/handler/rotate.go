@@ -42,6 +42,14 @@ func (core *rotateCoreHandler) output(file string, line int, lv level.Level, v .
 	if err := core.outputCore(file, line, lv, v...); err != nil {
 		err = erro.Wrap(err)
 		fmt.Fprintln(os.Stderr, err)
+		if core.sink != nil {
+			core.sink.Flush()
+			core.sink = nil
+		}
+		if core.file != nil {
+			core.file.Close()
+			core.file = nil
+		}
 	}
 }
 
@@ -98,18 +106,13 @@ func (core *rotateCoreHandler) outputCore(file string, line int, lv level.Level,
 }
 
 func (core *rotateCoreHandler) rotate() error {
+	if core.sink != nil {
+		core.sink.Flush()
+		core.sink = nil
+	}
 	if core.file != nil {
-		if core.sink != nil {
-			if err := core.sink.Flush(); err != nil {
-				return erro.Wrap(err)
-			}
-			core.sink = nil
-		}
-		if err := core.file.Close(); err != nil {
-			return erro.Wrap(err)
-		}
+		core.file.Close()
 		core.file = nil
-		core.size = 0
 	}
 
 	return erro.Wrap(rotateFile(core.path, core.num))
