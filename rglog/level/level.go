@@ -36,6 +36,11 @@ func init() {
 	}
 }
 
+// lv が lv2 より重要なときのみ true。
+func (lv Level) Higher(lv2 Level) bool {
+	return lv < lv2
+}
+
 func (lv Level) String() string {
 	val := int(lv)
 	if val < 0 || len(lvToLabel) <= val {
