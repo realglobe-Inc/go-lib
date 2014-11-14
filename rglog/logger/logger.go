@@ -15,6 +15,7 @@ type Logger interface {
 	RemoveHandler(key string) (oldHndl handler.Handler)
 
 	// ハンドラに処理させる重要度の下限を返す。
+	// 初期値は level.OFF。
 	Level() level.Level
 	// ハンドラに処理させる重要度の下限を指定する。
 	SetLevel(lv level.Level)
