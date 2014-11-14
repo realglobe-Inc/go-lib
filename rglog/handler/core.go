@@ -134,7 +134,7 @@ type coreWrapper struct {
 }
 
 func wrapCoreHandler(core coreHandler) Handler {
-	return &coreWrapper{base: core}
+	return &coreWrapper{lv: level.ALL, base: core}
 }
 
 func (hndl *coreWrapper) SetLevel(lv level.Level) {

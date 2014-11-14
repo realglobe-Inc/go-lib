@@ -32,7 +32,7 @@ func NewBasicHandlerUsing(sink io.Writer, fmter Formatter) Handler {
 }
 
 func newBasicHandlerUsing(sink io.Writer, fmter Formatter) *basicHandler {
-	return &basicHandler{fmter: fmter, sink: sink}
+	return &basicHandler{lv: level.ALL, fmter: fmter, sink: sink}
 }
 
 func (hndl *basicHandler) Output(depth int, lv level.Level, v ...interface{}) {
