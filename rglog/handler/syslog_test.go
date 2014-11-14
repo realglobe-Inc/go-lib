@@ -42,6 +42,7 @@ func TestManySyslogHandler(t *testing.T) {
 	hndls := []Handler{}
 	for i := 0; i < n; i++ {
 		hndl := NewSyslogHandler("a")
+		defer hndl.Close()
 		hndl.SetLevel(level.ALL)
 		hndls = append(hndls, hndl)
 	}

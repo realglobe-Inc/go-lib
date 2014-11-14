@@ -38,7 +38,7 @@ func TestFluentdHandlerMessageLength(t *testing.T) {
 	}
 
 	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
-	defer hndl.Flush()
+	defer hndl.Close()
 
 	hndl.SetLevel(level.ALL)
 
@@ -63,7 +63,7 @@ func TestManyFluentdHandler(t *testing.T) {
 	hndls := []Handler{}
 	for i := 0; i < n; i++ {
 		hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
-		defer hndl.Flush()
+		defer hndl.Close()
 
 		hndl.SetLevel(level.ALL)
 		hndls = append(hndls, hndl)
