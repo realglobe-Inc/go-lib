@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
 	"log/syslog"
 	"testing"
+	"time"
 )
 
 // 実際テストしたかったら true に。
@@ -42,13 +44,14 @@ func TestManySyslogHandler(t *testing.T) {
 	hndls := []Handler{}
 	for i := 0; i < n; i++ {
 		hndl := NewSyslogHandler("a")
+		defer hndl.Close()
 		hndl.SetLevel(level.ALL)
 		hndls = append(hndls, hndl)
 	}
 
 	for i := 0; i < loop; i++ {
 		for j := 0; j < len(hndls); j++ {
-			hndls[j].Output(0, level.ERR, "a ", j, i)
+			hndls[j].Output(&record{date: time.Now(), lv: level.ERR, msg: fmt.Sprint("a ", j, i)})
 		}
 	}
 }

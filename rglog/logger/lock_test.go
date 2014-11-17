@@ -20,6 +20,10 @@ func TestLockLoggerIsLoggable(t *testing.T) {
 	testLoggerIsLoggable(t, NewLockLoggerManager())
 }
 
+func TestLockLoggerFileName(t *testing.T) {
+	testLoggerFileName(t, NewLockLoggerManager())
+}
+
 func TestLockLoggerConcurrent(t *testing.T) {
 	testLoggerConcurrent(t, NewLockLoggerManager())
 }

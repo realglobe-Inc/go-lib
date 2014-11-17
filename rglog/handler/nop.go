@@ -14,7 +14,7 @@ func NewNopHandler() Handler {
 
 func (hndl *nopHandler) SetLevel(lv level.Level) {}
 
-func (hndl *nopHandler) Output(depth int, lv level.Level, v ...interface{}) {}
+func (hndl *nopHandler) Output(rec Record) {}
 
 func (hndl *nopHandler) Flush() {}
 

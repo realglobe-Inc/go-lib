@@ -137,6 +137,41 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 	}
 }
 
+// ファイル名がちゃんと解決できてるかどうか。
+func testLoggerFileName(t *testing.T, mgr Manager) {
+	log := mgr.Logger("a/b/c")
+	log.SetLevel(level.ALL)
+	log.SetUseParent(false)
+
+	hndl := handler.NewMemoryHandlerUsing(&fileOnlyFormatter{})
+	hndl.SetLevel(level.ALL)
+	log.AddHandler("test", hndl)
+
+	log.Log(level.INFO, "")
+	dum := hndl.Dump()
+	if dum != filepath.Join("github.com", "realglobe-Inc", "go-lib-rg", "rglog", "logger", "logger_test.go") {
+		t.Error(dum)
+	}
+
+	for _, logging := range []func(...interface{}){log.Err, log.Warn, log.Info, log.Debug} {
+		hndl := handler.NewMemoryHandlerUsing(&fileOnlyFormatter{})
+		hndl.SetLevel(level.ALL)
+		log.AddHandler("test", hndl)
+
+		logging("")
+		dum := hndl.Dump()
+		if dum != filepath.Join("github.com", "realglobe-Inc", "go-lib-rg", "rglog", "logger", "logger_test.go") {
+			t.Error(dum)
+		}
+	}
+}
+
+type fileOnlyFormatter struct{}
+
+func (fmter *fileOnlyFormatter) Format(rec handler.Record) []byte {
+	return []byte(rec.File())
+}
+
 func testLoggerConcurrent(t *testing.T, mgr Manager) {
 	rootLabel := "a/b/c"
 

@@ -1,10 +1,13 @@
 package logger
 
 import (
+	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"runtime"
 	"strings"
 	"sync"
+	"time"
 )
 
 // 全部ロックするログ。
@@ -76,86 +79,91 @@ func (log *lockLogger) SetUseParent(useParent bool) {
 func (log *lockLogger) IsLoggable(lv level.Level) bool {
 	cur := log
 
-	cur.lock.Lock()
 	for {
+		cur.lock.Lock()
+		curLv := cur.lv
+		hndlNum := len(cur.hndls)
+		useParent := cur.useParent
+		cur.lock.Unlock()
 
-		if lv <= cur.lv {
-			if len(cur.hndls) > 0 {
-				cur.lock.Unlock()
-				return true
-			}
+		if !lv.Lower(curLv) && hndlNum > 0 {
+			return true
 		}
 
-		if !cur.useParent {
-			cur.lock.Unlock()
+		if !useParent {
 			return false
 		}
-
-		cur.mgr.lock.Lock() // ロック結合。Log を参照。
-		cur.lock.Unlock()
 
 		newCur := cur.mgr.getParent(cur.name)
 		if newCur == nil {
-			cur.mgr.lock.Unlock()
 			return false
 		}
 		cur = newCur
+	}
+}
 
-		cur.lock.Lock() // ロック結合。
-		cur.mgr.lock.Unlock()
+func (log *lockLogger) logging(rec *record) {
+	cur := log
+
+	for {
+		hndls := []handler.Handler{}
+		cur.lock.Lock()
+		lv := cur.lv
+		for _, hndl := range cur.hndls {
+			hndls = append(hndls, hndl)
+		}
+		useParent := cur.useParent
+		cur.lock.Unlock()
+
+		if !rec.Level().Lower(lv) && len(hndls) > 0 {
+			if rec.file == "" {
+				rec.date = time.Now()
+				if _, file, line, ok := runtime.Caller(2); ok {
+					rec.file = trimPrefix(file)
+					rec.line = line
+				} else {
+					rec.file = "???"
+					rec.line = 0
+				}
+				rec.msg = fmt.Sprint(rec.rawMsg...)
+			}
+
+			for _, hndl := range hndls {
+				hndl.Output(rec)
+			}
+		}
+
+		if !useParent {
+			return
+		}
+
+		// ロック結合した方が良さそうだけど、たぶん大丈夫だろう。
+		newCur := cur.mgr.getParent(cur.name)
+		if newCur == nil {
+			return
+		}
+		cur = newCur
 	}
 }
 
 func (log *lockLogger) Log(lv level.Level, v ...interface{}) {
-	cur := log
-
-	cur.lock.Lock()
-	for {
-
-		if lv <= cur.lv {
-			for _, hndl := range cur.hndls {
-				hndl.Output(2, lv, v...)
-			}
-		}
-
-		if !cur.useParent {
-			cur.lock.Unlock()
-			return
-		}
-
-		cur.mgr.lock.Lock() // ロック結合。
-		cur.lock.Unlock()
-
-		// 結合する必要も無さそうだけど、念のため。
-		// 結合しないなら getParent の中で lock.Lock() と defer lock.Unlock() すれば良い。
-		// デッドロックを防ぐため、結合する順番は葉から根の方向のみ。
-
-		newCur := cur.mgr.getParent(cur.name)
-		if newCur == nil {
-			cur.mgr.lock.Unlock()
-			return
-		}
-		cur = newCur
-
-		cur.lock.Lock() // ロック結合。
-		cur.mgr.lock.Unlock()
-	}
+	log.logging(&record{lv: lv, rawMsg: v})
 }
 
 func (log *lockLogger) Err(v ...interface{}) {
-	log.Log(level.ERR, v...)
+	log.logging(&record{lv: level.ERR, rawMsg: v})
 }
 
 func (log *lockLogger) Warn(v ...interface{}) {
-	log.Log(level.WARN, v...)
+	log.logging(&record{lv: level.WARN, rawMsg: v})
 }
 
 func (log *lockLogger) Info(v ...interface{}) {
-	log.Log(level.INFO, v...)
+	log.logging(&record{lv: level.INFO, rawMsg: v})
 }
 
 func (log *lockLogger) Debug(v ...interface{}) {
-	log.Log(level.DEBUG, v...)
+	log.logging(&record{lv: level.DEBUG, rawMsg: v})
 }
 
 func (log *lockLogger) flush() {
@@ -181,6 +189,9 @@ func NewLockLoggerManager() *lockLoggerManager {
 // ロックは外で。
 func (mgr *lockLoggerManager) getParent(name string) *lockLogger {
 	const sep = "/"
+
+	mgr.lock.Lock()
+	defer mgr.lock.Unlock()
 	for curName := name; ; {
 		pos := strings.LastIndex(curName, sep)
 		if pos < 0 {
@@ -230,4 +241,29 @@ func (mgr *lockLoggerManager) Flush() {
 	for _, log := range logs {
 		log.flush()
 	}
+}
+
+type record struct {
+	date   time.Time
+	lv     level.Level
+	file   string
+	line   int
+	msg    string
+	rawMsg []interface{}
+}
+
+func (rec *record) Date() time.Time {
+	return rec.date
+}
+func (rec *record) Level() level.Level {
+	return rec.lv
+}
+func (rec *record) File() string {
+	return rec.file
+}
+func (rec *record) Line() int {
+	return rec.line
+}
+func (rec *record) Message() string {
+	return rec.msg
 }

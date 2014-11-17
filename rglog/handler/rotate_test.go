@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func testFilePath() (path string, err error) {
@@ -51,10 +52,11 @@ func TestRotateHandlerRotation(t *testing.T) {
 	for i := 1; i <= num; i++ {
 		defer os.Remove(path + "." + strconv.Itoa(i))
 	}
+	defer hndl.Close()
 
 	hndl.SetLevel(level.ALL)
 	for i := 0; i < 2*num; i++ {
-		hndl.Output(0, level.INFO, "test")
+		hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "test"})
 	}
 	hndl.Flush()
 
@@ -75,11 +77,12 @@ func TestRotateHandlerLogging(t *testing.T) {
 	}
 	hndl := NewRotateHandler(path, 1<<20, 0)
 	defer os.Remove(path)
+	defer hndl.Close()
 
 	n := 1000
 	hndl.SetLevel(level.ALL)
 	for i := 0; i < n; i++ {
-		hndl.Output(0, level.INFO, "test")
+		hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "test"})
 	}
 	hndl.Flush()
 
