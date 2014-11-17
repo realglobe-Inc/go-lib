@@ -130,6 +130,7 @@ type coreWrapper struct {
 	lv   level.Level
 
 	// スレッドセーフに使いたいなら、こいつをスレッドセーフにしとく必要あり。
+	// synchronizedCoreHandler でラップしておけば問題無い。
 	base coreHandler
 }
 
