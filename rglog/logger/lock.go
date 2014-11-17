@@ -86,7 +86,7 @@ func (log *lockLogger) IsLoggable(lv level.Level) bool {
 		useParent := cur.useParent
 		cur.lock.Unlock()
 
-		if lv <= curLv && hndlNum > 0 {
+		if !lv.Lower(curLv) && hndlNum > 0 {
 			return true
 		}
 
@@ -115,7 +115,7 @@ func (log *lockLogger) logging(rec *record) {
 		useParent := cur.useParent
 		cur.lock.Unlock()
 
-		if rec.Level() <= lv && len(hndls) > 0 {
+		if !rec.Level().Lower(lv) && len(hndls) > 0 {
 			if rec.file == "" {
 				rec.date = time.Now()
 				if _, file, line, ok := runtime.Caller(2); ok {

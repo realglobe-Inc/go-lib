@@ -143,7 +143,7 @@ func (hndl *coreWrapper) SetLevel(lv level.Level) {
 
 func (hndl *coreWrapper) Output(rec Record) {
 	hndl.lock.Lock()
-	if rec.Level() > hndl.lv {
+	if rec.Level().Lower(hndl.lv) {
 		hndl.lock.Unlock()
 		return
 	}

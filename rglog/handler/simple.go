@@ -37,7 +37,7 @@ func (hndl *basicHandler) Output(rec Record) {
 	hndl.lock.Lock()
 	defer hndl.lock.Unlock()
 
-	if rec.Level() <= hndl.lv {
+	if !rec.Level().Lower(hndl.lv) {
 		hndl.sink.Write(hndl.fmter.Format(rec))
 	}
 }
