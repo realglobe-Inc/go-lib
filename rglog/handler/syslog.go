@@ -7,7 +7,6 @@ import (
 	"log/syslog"
 	"os"
 	"strconv"
-	"time"
 )
 
 // syslog にログを流す coreHandler。
@@ -19,10 +18,11 @@ type syslogCoreHandler struct {
 	base *syslog.Writer
 }
 
-func (core *syslogCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+func (core *syslogCoreHandler) output(rec Record) {
 	// {レベル} {ファイル名}:{行番号} {メッセージ}
 	// 日時は syslog が付ける。
-	msg := fmt.Sprintf("%."+strconv.Itoa(lvWidth)+"v %s:%d %s\n", lv, file, line, fmt.Sprint(v...))
+	msg := fmt.Sprintf("%."+strconv.Itoa(lvWidth)+"v %s:%d %s\n",
+		rec.Level(), rec.File(), rec.Line(), rec.Message())
 
 	for retry := false; ; retry = true {
 		if core.base == nil {
@@ -31,7 +31,7 @@ func (core *syslogCoreHandler) output(file string, line int, lv level.Level, v .
 			if err != nil {
 				// 初期化出来なければ諦める。
 				fmt.Fprintln(os.Stderr, erro.Wrap(err))
-				fmt.Fprintln(os.Stderr, "Drop log: "+string(SimpleFormatter.Format(time.Now(), file, line, lv, v...)))
+				fmt.Fprintln(os.Stderr, "Drop log: "+string(SimpleFormatter.Format(rec)))
 				return
 			}
 		}
@@ -39,7 +39,7 @@ func (core *syslogCoreHandler) output(file string, line int, lv level.Level, v .
 		// 初期化してある。
 
 		var err error
-		switch lv {
+		switch rec.Level() {
 		case level.ERR:
 			err = core.base.Err(msg)
 		case level.WARN:
@@ -63,7 +63,7 @@ func (core *syslogCoreHandler) output(file string, line int, lv level.Level, v .
 
 		if retry {
 			// 初期化しなおしても書き込めないなら諦める。
-			fmt.Fprintln(os.Stderr, "Drop log: "+string(SimpleFormatter.Format(time.Now(), file, line, lv, v...)))
+			fmt.Fprintln(os.Stderr, "Drop log: "+string(SimpleFormatter.Format(rec)))
 			return
 		}
 	}

@@ -4,12 +4,10 @@ import (
 	"container/list"
 	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/erro"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
 	"io"
 	"net"
 	"os"
 	"strconv"
-	"time"
 )
 
 // fluentd の in_forward にログを流す coreHandler。
@@ -26,7 +24,7 @@ type fluentdCoreHandler struct {
 	buff *tcpLogBuffer
 }
 
-func (core *fluentdCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
+func (core *fluentdCoreHandler) output(rec Record) {
 	// 形式は JSON で書けば、
 	//
 	// [
@@ -44,30 +42,27 @@ func (core *fluentdCoreHandler) output(file string, line int, lv level.Level, v 
 	// http://docs.fluentd.org/ja/articles/in_forward と
 	// https://github.com/msgpack/msgpack/blob/master/spec.md を参照。
 
-	date := time.Now()
-	msg := fmt.Sprint(v...)
-
 	// fixarray 3.
 	buff := []byte{0x90 | 3}
 
 	buff = append(buff, messagePackString(core.tag)...)
 
-	buff = append(buff, messagePackInteger(date.Unix())...)
+	buff = append(buff, messagePackInteger(rec.Date().Unix())...)
 
 	// fixmap 4.
 	buff = append(buff, 0x80|4)
 
 	buff = append(buff, messagePackString("level")...)
-	buff = append(buff, messagePackString(lv.String())...)
+	buff = append(buff, messagePackString(rec.Level().String())...)
 
 	buff = append(buff, messagePackString("file")...)
-	buff = append(buff, messagePackString(file)...)
+	buff = append(buff, messagePackString(rec.File())...)
 
 	buff = append(buff, messagePackString("line")...)
-	buff = append(buff, messagePackInteger(int64(line))...)
+	buff = append(buff, messagePackInteger(int64(rec.Line()))...)
 
 	buff = append(buff, messagePackString("message")...)
-	buff = append(buff, messagePackString(msg)...)
+	buff = append(buff, messagePackString(rec.Message())...)
 
 	const ( // てきとう。
 		writeSize  = 4096

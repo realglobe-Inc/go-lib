@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"time"
 )
 
 // ログの書き出し機。
@@ -11,12 +12,19 @@ type Handler interface {
 	// 初期値は基本的に level.ALL。
 	SetLevel(lv level.Level)
 
-	// 書き出させる。
-	// depth は Logger が重ねたスタックの数。
-	Output(depth int, lv level.Level, v ...interface{})
+	// 書き出す。
+	Output(rec Record)
 
 	// バッファを使っているなら、低層に書き出す。
 	Flush()
 
 	Close()
+}
+
+type Record interface {
+	Date() time.Time
+	Level() level.Level
+	File() string
+	Line() int
+	Message() string
 }

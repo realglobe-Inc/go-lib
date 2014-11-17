@@ -5,11 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/erro"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
 	"os"
 	"path/filepath"
 	"strconv"
-	"time"
 )
 
 const (
@@ -35,8 +33,8 @@ type rotateCoreHandler struct {
 	buff *fileLogBuffer
 }
 
-func (core *rotateCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
-	buff := core.fmter.Format(time.Now(), file, line, lv, v...)
+func (core *rotateCoreHandler) output(rec Record) {
+	buff := core.fmter.Format(rec)
 
 	const ( // てきとう。
 		writeSize  = 4096

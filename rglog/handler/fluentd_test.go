@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
 	"net"
 	"testing"
@@ -50,7 +51,7 @@ func TestFluentdHandlerMessageLength(t *testing.T) {
 		for j := 0; j < (1 << uint(i)); j++ {
 			msg += "a"
 		}
-		hndl.Output(0, level.INFO, msg)
+		hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: msg})
 	}
 }
 
@@ -74,7 +75,7 @@ func TestManyFluentdHandler(t *testing.T) {
 
 	for i := 0; i < loop; i++ {
 		for j := 0; j < len(hndls); j++ {
-			hndls[j].Output(0, level.ERR, "a ", j, i)
+			hndls[j].Output(&record{date: time.Now(), lv: level.INFO, msg: fmt.Sprint("a ", j, i)})
 		}
 	}
 }
@@ -157,7 +158,7 @@ func TestFluentdHandlerConnectionCut(t *testing.T) {
 	hndl := NewFluentdHandler(lis.Addr().String(), "rglog.test")
 	defer hndl.Close()
 
-	hndl.Output(0, level.INFO, "log message 1")
+	hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "log message 1"})
 	hndl.Flush()
 
 	// ログ 1 を流した。
@@ -168,10 +169,10 @@ func TestFluentdHandlerConnectionCut(t *testing.T) {
 
 	// 同期。
 
-	hndl.Output(0, level.INFO, "log message 2")
+	hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "log message 2"})
 	hndl.Flush()
 
-	hndl.Output(0, level.INFO, "log message 3")
+	hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "log message 3"})
 	hndl.Flush()
 
 	if err := <-syncCh; err != nil {

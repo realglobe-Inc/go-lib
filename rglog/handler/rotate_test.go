@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func testFilePath() (path string, err error) {
@@ -55,7 +56,7 @@ func TestRotateHandlerRotation(t *testing.T) {
 
 	hndl.SetLevel(level.ALL)
 	for i := 0; i < 2*num; i++ {
-		hndl.Output(0, level.INFO, "test")
+		hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "test"})
 	}
 	hndl.Flush()
 
@@ -81,7 +82,7 @@ func TestRotateHandlerLogging(t *testing.T) {
 	n := 1000
 	hndl.SetLevel(level.ALL)
 	for i := 0; i < n; i++ {
-		hndl.Output(0, level.INFO, "test")
+		hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "test"})
 	}
 	hndl.Flush()
 

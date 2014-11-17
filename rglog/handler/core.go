@@ -11,10 +11,9 @@ import (
 )
 
 // ログの書き込みを別ゴルーチンで実行できるようにするために分離。
-// 別ゴルーチンだとファイル名と行番号の取得ができないので、こんな切り分け。
 // synchronizedCoreHandler でラップして使うので、この部分をスレッドセーフに実装する必要はない。
 type coreHandler interface {
-	output(file string, line int, lv level.Level, v ...interface{})
+	output(rec Record)
 	flush()
 	close()
 }
@@ -34,10 +33,7 @@ const chCap = 1000
 const flushInterval = time.Minute
 
 type synchronizedOutputRequest struct {
-	file string
-	line int
-	level.Level
-	v []interface{}
+	rec Record
 }
 
 type synchronizedFlushRequest struct {
@@ -48,8 +44,8 @@ type synchronizedCloseRequest struct {
 	ackCh chan<- struct{}
 }
 
-func (core *synchronizedCoreHandler) output(file string, line int, lv level.Level, v ...interface{}) {
-	core.reqCh <- &synchronizedOutputRequest{file, line, lv, v}
+func (core *synchronizedCoreHandler) output(rec Record) {
+	core.reqCh <- &synchronizedOutputRequest{rec}
 }
 
 func (core *synchronizedCoreHandler) flush() {
@@ -109,7 +105,7 @@ func newSynchronizedCoreHandler(base coreHandler) coreHandler {
 func handleSynchronizedRequest(base coreHandler, req interface{}) (closed bool) {
 	switch r := req.(type) {
 	case *synchronizedOutputRequest:
-		base.output(r.file, r.line, r.Level, r.v...)
+		base.output(r.rec)
 	case *synchronizedFlushRequest:
 		defer func() { r.ackCh <- struct{}{} }()
 		base.flush()
@@ -145,23 +141,15 @@ func (hndl *coreWrapper) SetLevel(lv level.Level) {
 	hndl.lv = lv
 }
 
-func (hndl *coreWrapper) Output(depth int, lv level.Level, v ...interface{}) {
+func (hndl *coreWrapper) Output(rec Record) {
 	hndl.lock.Lock()
-	if lv > hndl.lv {
+	if rec.Level() > hndl.lv {
 		hndl.lock.Unlock()
 		return
 	}
 	hndl.lock.Unlock()
 
-	_, file, line, ok := runtime.Caller(depth + 1)
-	if ok {
-		file = trimPrefix(file)
-	} else {
-		file = "???"
-		line = 0
-	}
-
-	hndl.base.output(file, line, lv, v...)
+	hndl.base.output(rec)
 }
 
 func (hndl *coreWrapper) Flush() {

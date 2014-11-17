@@ -1,10 +1,13 @@
 package logger
 
 import (
+	"fmt"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
 	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"runtime"
 	"strings"
 	"sync"
+	"time"
 )
 
 // 全部ロックするログ。
@@ -106,15 +109,27 @@ func (log *lockLogger) IsLoggable(lv level.Level) bool {
 	}
 }
 
-func (log *lockLogger) Log(lv level.Level, v ...interface{}) {
+func (log *lockLogger) logging(rec *record) {
 	cur := log
 
 	cur.lock.Lock()
 	for {
 
-		if lv <= cur.lv {
+		if rec.Level() <= cur.lv {
+			if rec.file == "" {
+				rec.date = time.Now()
+				if _, file, line, ok := runtime.Caller(2); ok {
+					rec.file = trimPrefix(file)
+					rec.line = line
+				} else {
+					rec.file = "???"
+					rec.line = 0
+				}
+				rec.msg = fmt.Sprint(rec.rawMsg...)
+			}
+
 			for _, hndl := range cur.hndls {
-				hndl.Output(2, lv, v...)
+				hndl.Output(rec)
 			}
 		}
 
@@ -142,20 +157,24 @@ func (log *lockLogger) Log(lv level.Level, v ...interface{}) {
 	}
 }
 
+func (log *lockLogger) Log(lv level.Level, v ...interface{}) {
+	log.logging(&record{lv: lv, rawMsg: v})
+}
+
 func (log *lockLogger) Err(v ...interface{}) {
-	log.Log(level.ERR, v...)
+	log.logging(&record{lv: level.ERR, rawMsg: v})
 }
 
 func (log *lockLogger) Warn(v ...interface{}) {
-	log.Log(level.WARN, v...)
+	log.logging(&record{lv: level.WARN, rawMsg: v})
 }
 
 func (log *lockLogger) Info(v ...interface{}) {
-	log.Log(level.INFO, v...)
+	log.logging(&record{lv: level.INFO, rawMsg: v})
 }
 
 func (log *lockLogger) Debug(v ...interface{}) {
-	log.Log(level.DEBUG, v...)
+	log.logging(&record{lv: level.DEBUG, rawMsg: v})
 }
 
 func (log *lockLogger) flush() {
@@ -230,4 +249,29 @@ func (mgr *lockLoggerManager) Flush() {
 	for _, log := range logs {
 		log.flush()
 	}
+}
+
+type record struct {
+	date   time.Time
+	lv     level.Level
+	file   string
+	line   int
+	msg    string
+	rawMsg []interface{}
+}
+
+func (rec *record) Date() time.Time {
+	return rec.date
+}
+func (rec *record) Level() level.Level {
+	return rec.lv
+}
+func (rec *record) File() string {
+	return rec.file
+}
+func (rec *record) Line() int {
+	return rec.line
+}
+func (rec *record) Message() string {
+	return rec.msg
 }

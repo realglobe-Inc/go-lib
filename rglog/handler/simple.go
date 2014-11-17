@@ -8,9 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sync"
-	"time"
 )
 
 // 与えられた出力先に書き出すだけの Handler.
@@ -35,29 +33,13 @@ func newBasicHandlerUsing(sink io.Writer, fmter Formatter) *basicHandler {
 	return &basicHandler{lv: level.ALL, fmter: fmter, sink: sink}
 }
 
-func (hndl *basicHandler) Output(depth int, lv level.Level, v ...interface{}) {
+func (hndl *basicHandler) Output(rec Record) {
 	hndl.lock.Lock()
 	defer hndl.lock.Unlock()
 
-	if lv > hndl.lv {
-		return
+	if rec.Level() <= hndl.lv {
+		hndl.sink.Write(hndl.fmter.Format(rec))
 	}
-	hndl.lock.Unlock()
-
-	// この辺は標準の log.Output を参考にした。
-	// release lock while getting caller info - it's expensive.
-	date := time.Now()
-	_, file, line, ok := runtime.Caller(depth + 1)
-	if ok {
-		file = trimPrefix(file)
-	} else {
-		file = "???"
-		line = 0
-	}
-	buff := hndl.fmter.Format(date, file, line, lv, v...)
-
-	hndl.lock.Lock()
-	hndl.sink.Write(buff)
 }
 
 func (hndl *basicHandler) SetLevel(lv level.Level) {
