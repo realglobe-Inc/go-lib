@@ -79,43 +79,43 @@ func (log *lockLogger) SetUseParent(useParent bool) {
 func (log *lockLogger) IsLoggable(lv level.Level) bool {
 	cur := log
 
-	cur.lock.Lock()
 	for {
+		cur.lock.Lock()
+		curLv := cur.lv
+		hndlNum := len(cur.hndls)
+		useParent := cur.useParent
+		cur.lock.Unlock()
 
-		if lv <= cur.lv {
-			if len(cur.hndls) > 0 {
-				cur.lock.Unlock()
-				return true
-			}
+		if lv <= curLv && hndlNum > 0 {
+			return true
 		}
 
-		if !cur.useParent {
-			cur.lock.Unlock()
+		if !useParent {
 			return false
 		}
-
-		cur.mgr.lock.Lock() // ロック結合。Log を参照。
-		cur.lock.Unlock()
 
 		newCur := cur.mgr.getParent(cur.name)
 		if newCur == nil {
-			cur.mgr.lock.Unlock()
 			return false
 		}
 		cur = newCur
-
-		cur.lock.Lock() // ロック結合。
-		cur.mgr.lock.Unlock()
 	}
 }
 
 func (log *lockLogger) logging(rec *record) {
 	cur := log
 
-	cur.lock.Lock()
 	for {
+		hndls := []handler.Handler{}
+		cur.lock.Lock()
+		lv := cur.lv
+		for _, hndl := range cur.hndls {
+			hndls = append(hndls, hndl)
+		}
+		useParent := cur.useParent
+		cur.lock.Unlock()
 
-		if rec.Level() <= cur.lv {
+		if rec.Level() <= lv && len(hndls) > 0 {
 			if rec.file == "" {
 				rec.date = time.Now()
 				if _, file, line, ok := runtime.Caller(2); ok {
@@ -128,32 +128,21 @@ func (log *lockLogger) logging(rec *record) {
 				rec.msg = fmt.Sprint(rec.rawMsg...)
 			}
 
-			for _, hndl := range cur.hndls {
+			for _, hndl := range hndls {
 				hndl.Output(rec)
 			}
 		}
 
-		if !cur.useParent {
-			cur.lock.Unlock()
+		if !useParent {
 			return
 		}
 
-		cur.mgr.lock.Lock() // ロック結合。
-		cur.lock.Unlock()
-
-		// 結合する必要も無さそうだけど、念のため。
-		// 結合しないなら getParent の中で lock.Lock() と defer lock.Unlock() すれば良い。
-		// デッドロックを防ぐため、結合する順番は葉から根の方向のみ。
-
+		// ロック結合した方が良さそうだけど、たぶん大丈夫だろう。
 		newCur := cur.mgr.getParent(cur.name)
 		if newCur == nil {
-			cur.mgr.lock.Unlock()
 			return
 		}
 		cur = newCur
-
-		cur.lock.Lock() // ロック結合。
-		cur.mgr.lock.Unlock()
 	}
 }
 
@@ -200,6 +189,9 @@ func NewLockLoggerManager() *lockLoggerManager {
 // ロックは外で。
 func (mgr *lockLoggerManager) getParent(name string) *lockLogger {
 	const sep = "/"
+
+	mgr.lock.Lock()
+	defer mgr.lock.Unlock()
 	for curName := name; ; {
 		pos := strings.LastIndex(curName, sep)
 		if pos < 0 {
