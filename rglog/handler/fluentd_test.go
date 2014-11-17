@@ -81,6 +81,5 @@ func BenchmarkFluentdHandler(b *testing.B) {
 		b.SkipNow()
 	}
 
-	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
-	benchmarkHandler(b, hndl)
+	benchmarkHandler(b, NewFluentdHandler(fluentdAddr, "rglog.test"))
 }
