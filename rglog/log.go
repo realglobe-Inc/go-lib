@@ -23,7 +23,7 @@ func init() {
 	log.SetUseParent(false)
 
 	hndl := handler.NewConsoleHandler()
-	hndl.SetLevel(level.INFO)
+	hndl.SetLevel(level.ALL)
 	log.AddHandler("console", hndl)
 }
 
