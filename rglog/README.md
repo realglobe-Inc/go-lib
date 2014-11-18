@@ -21,30 +21,31 @@ import (
 
 func main() {
 	...
-	// 使用する一番上の Logger を取得。
-	log := rglog.Logger("github.com/realglobe-Inc")
+	// 使用する一番上の logger.Logger を取得する。
+	// 引数には import パス等を使用する。
+	log := rglog.Logger("a/b/c")
 	defer rglog.Flush()
-
-	// これより上には遡らない。
+	// これより上には遡らせない。
 	log.SetUseParent(false)
-	// 書き出すレベルを設定。
+	// 全てのログを登録されている handler.Handler に渡させる。logger.Logger のデフォルトレベルは基本的に level.OFF。
 	log.SetLevel(level.ALL)
 
-	// 画面に INFO 以上を表示する。
+	// 標準エラー出力に level.INFO 以上を書き出させる。
 	hndl := handler.NewConsoleHandler()
 	hndl.SetLevel(level.INFO)
 	log.AddHandler("console", hndl)
 
-	// fileSize バイト、backupNum 個までのファイル logPath にデバッグ情報を出力する。
-	hndl = handler.NewRotateHandler(logPath, fileSize, backupNum)
-	hndl.SetLevel(level.DEBUG)
+	// ファイル path に、最大 size バイト、バックアップ数 n 個までで、デバッグ情報まで書き出させる。
+	hndl = handler.NewRotateHandler(path, size, n)
+	// handler.Handler のデフォルトレベルは基本的に level.ALL。
 	log.AddHandler("file", hndl)
 	...
 }
 ```
 
-無設定だと "" の Logger まで遡り、"" の Logger には "console" という名前で INFO 以上を画面に表示するハンドラが登録されている。
-
+無設定だと "" の logger.Logger まで遡る。
+"" の logger.Logger は level.INFO 以上を登録されている handler.Handler に渡し、渡された全てのログを標準エラー出力に書き出す handler.Handler が "console" という名前で登録されている。
+つまり、無設定だと level.INFO 以上が標準エラー出力に書き出される。
 
 使用したいところで、適当な Logger を取得して使う。
 
@@ -59,7 +60,7 @@ import (
 
 func Function() {
 	...
-	rglog.Logger("github.com/realglobe-Inc/a/b/c").Info("Log message")
+	rglog.Logger("a/b/c/d").Info("Log message")
 	...
 }
 ```
@@ -67,7 +68,7 @@ func Function() {
 何度も使うなら初期化時に取得しておくと良い。
 
 ```
-var log = rglog.Logger("github.com/realglobe-Inc/a/b/c")
+var log = rglog.Logger("a/b/c/d")
 
 ...
 
@@ -78,17 +79,17 @@ func Function() {
 }
 ```
 
-標準とは異なる動作を追加したいときは、log.AddHandler やら log.SetLevel やらで。
-log.SetUseParent(false) すれば、標準動作をさせないようにできる。
+標準とは異なる動作を追加したいときは、好きな handler.Handler を log.AddHandler したり、log.SetLevel したりで。
+標準動作をさせないなら、log.SetUseParent(false)。
 
-ログメッセージの生成が重い場合、IsLoggable でログを取らない場合には飛ばすようにできる。
+ログメッセージの生成が重いなら、IsLoggable で handler.Handler にログが渡されない場合には飛ばすこともできる。
 
 ```
 func Function() {
 	...
 	if log.IsLoggable(level.INFO) {
-		// ログの書き出しが発生する場合のみ、ここに至る。
-		log.Info(generateLogMessage())
+		// 1 つ以上の Handler.handler にログが渡される場合、ここに至る。
+		log.Log(level.INFO, generateLogMessage())
 	}
 	...
 }

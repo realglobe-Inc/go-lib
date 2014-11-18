@@ -12,11 +12,11 @@ import (
 
 var mgr logger.Manager
 
-// 標準を設定。
 func init() {
 	mgr = logger.NewLockLoggerManager()
 }
 
+// 無設定時の動作を設定。
 func init() {
 	log := mgr.Logger("")
 	log.SetLevel(level.INFO)
