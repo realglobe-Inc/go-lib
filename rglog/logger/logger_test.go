@@ -141,6 +141,19 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 	}
 }
 
+func testLoggerLog(t *testing.T, mgr Manager) {
+	// ただやってみるだけ。
+	// すぐに panic にならないことの確認くらいにはなる。
+
+	log := mgr.Logger("a/b/c/d")
+
+	log.SetLevel(level.INFO)
+
+	for _, lv := range level.Values() {
+		log.Log(lv, "test message level ", lv)
+	}
+}
+
 // ファイル名がちゃんと解決できてるかどうか。
 func testLoggerFileName(t *testing.T, mgr Manager) {
 	log := mgr.Logger("a/b/c")
