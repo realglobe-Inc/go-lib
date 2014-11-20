@@ -26,12 +26,20 @@ func init() {
 	}
 }
 
-func TestFluentdHandler(t *testing.T) {
+func TestFluentdHandlerLevel(t *testing.T) {
 	if fluentdAddr == "" {
 		t.SkipNow()
 	}
 
-	testHandler(t, NewFluentdHandler(fluentdAddr, "rglog.test"))
+	testHandlerLevel(t, NewFluentdHandler(fluentdAddr, "rglog.test"))
+}
+
+func TestFluentdHandlerOutput(t *testing.T) {
+	if fluentdAddr == "" {
+		t.SkipNow()
+	}
+
+	testHandlerOutput(t, NewFluentdHandler(fluentdAddr, "rglog.test"))
 }
 
 // 色んな長さのメッセージを送る。
@@ -43,8 +51,6 @@ func TestFluentdHandlerMessageLength(t *testing.T) {
 
 	hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 	defer hndl.Close()
-
-	hndl.SetLevel(level.ALL)
 
 	for i := 0; i < 18; i++ {
 		msg := ""
@@ -69,7 +75,6 @@ func TestManyFluentdHandler(t *testing.T) {
 		hndl := NewFluentdHandler(fluentdAddr, "rglog.test")
 		defer hndl.Close()
 
-		hndl.SetLevel(level.ALL)
 		hndls = append(hndls, hndl)
 	}
 

@@ -64,6 +64,7 @@ func ValueOf(label string) (Level, error) {
 	}
 }
 
+// 重要度降順で列挙する。
 func Values() []Level {
 	values := []Level{}
 	for i := OFF; i <= ALL; i++ {

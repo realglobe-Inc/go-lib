@@ -45,6 +45,10 @@ func testLoggerHandler(t *testing.T, mgr Manager) {
 func testLoggerLevel(t *testing.T, mgr Manager) {
 	log := mgr.Logger("a/b/c/d")
 
+	if log.Level() != level.OFF {
+		t.Error(log.Level())
+	}
+
 	for _, lv := range level.Values() {
 		log.SetLevel(lv)
 		if log.Level() != lv {
@@ -134,6 +138,19 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 	// 基準重要度より高い、先祖の基準重要度より高い。
 	if !log.IsLoggable(level.INFO) {
 		t.Error("false: upper or equal level, upper level")
+	}
+}
+
+func testLoggerLog(t *testing.T, mgr Manager) {
+	// ただやってみるだけ。
+	// すぐに panic にならないことの確認くらいにはなる。
+
+	log := mgr.Logger("a/b/c/d")
+
+	log.SetLevel(level.INFO)
+
+	for _, lv := range level.Values() {
+		log.Log(lv, "test message level ", lv)
 	}
 }
 

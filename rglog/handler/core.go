@@ -134,6 +134,13 @@ func wrapCoreHandler(core coreHandler) Handler {
 	return &coreWrapper{lv: level.ALL, base: core}
 }
 
+func (hndl *coreWrapper) Level() level.Level {
+	hndl.lock.Lock()
+	defer hndl.lock.Unlock()
+
+	return hndl.lv
+}
+
 func (hndl *coreWrapper) SetLevel(lv level.Level) {
 	hndl.lock.Lock()
 	defer hndl.lock.Unlock()

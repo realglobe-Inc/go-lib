@@ -25,7 +25,7 @@ func testFilePath() (path string, err error) {
 	return file.Name(), nil
 }
 
-func TestRotateHandler(t *testing.T) {
+func TestRotateHandlerLevel(t *testing.T) {
 	path, err := testFilePath()
 	if err != nil {
 		t.Fatal(err)
@@ -36,7 +36,21 @@ func TestRotateHandler(t *testing.T) {
 		defer os.Remove(path + "." + strconv.Itoa(i))
 	}
 
-	testHandler(t, hndl)
+	testHandlerLevel(t, hndl)
+}
+
+func TestRotateHandlerOutput(t *testing.T) {
+	path, err := testFilePath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	hndl := NewRotateHandler(path, 1<<20, 10)
+	defer os.Remove(path)
+	for i := 1; i <= 10; i++ {
+		defer os.Remove(path + "." + strconv.Itoa(i))
+	}
+
+	testHandlerOutput(t, hndl)
 }
 
 // ローテートしてみる。
@@ -54,7 +68,6 @@ func TestRotateHandlerRotation(t *testing.T) {
 	}
 	defer hndl.Close()
 
-	hndl.SetLevel(level.ALL)
 	for i := 0; i < 2*num; i++ {
 		hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "test"})
 	}
@@ -80,7 +93,6 @@ func TestRotateHandlerLogging(t *testing.T) {
 	defer hndl.Close()
 
 	n := 1000
-	hndl.SetLevel(level.ALL)
 	for i := 0; i < n; i++ {
 		hndl.Output(&record{date: time.Now(), lv: level.INFO, msg: "test"})
 	}

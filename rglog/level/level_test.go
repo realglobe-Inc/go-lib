@@ -5,6 +5,33 @@ import (
 	"testing"
 )
 
+func TestCompare(t *testing.T) {
+	lvs := Values()
+	for i := 0; i < len(lvs); i++ {
+		for j := 0; j < len(lvs); j++ {
+			if i == j {
+				if lvs[i].Higher(lvs[j]) {
+					t.Error(lvs[i], lvs[j])
+				} else if lvs[i].Lower(lvs[j]) {
+					t.Error(lvs[i], lvs[j])
+				}
+			} else if i < j {
+				if !lvs[i].Higher(lvs[j]) {
+					t.Error(lvs[i], lvs[j])
+				} else if lvs[i].Lower(lvs[j]) {
+					t.Error(lvs[i], lvs[j])
+				}
+			} else {
+				if lvs[i].Higher(lvs[j]) {
+					t.Error(lvs[i], lvs[j])
+				} else if !lvs[i].Lower(lvs[j]) {
+					t.Error(lvs[i], lvs[j])
+				}
+			}
+		}
+	}
+}
+
 func TestConvert(t *testing.T) {
 	for _, lv := range Values() {
 		if lv2, err := ValueOf(lv.String()); err != nil {

@@ -24,12 +24,20 @@ func init() {
 	}
 }
 
-func TestSyslogHandler(t *testing.T) {
+func TestSyslogHandlerLevel(t *testing.T) {
 	if !testSyslogHandlerFlag {
 		t.SkipNow()
 	}
 
-	testHandler(t, NewSyslogHandler("go-lib-rg"))
+	testHandlerLevel(t, NewSyslogHandler("go-lib-rg"))
+}
+
+func TestSyslogHandlerOutput(t *testing.T) {
+	if !testSyslogHandlerFlag {
+		t.SkipNow()
+	}
+
+	testHandlerOutput(t, NewSyslogHandler("go-lib-rg"))
 }
 
 // TODO 複数のコネクションで大量にログを吐くとデッドロックする場合がある。対処法不明。
@@ -45,7 +53,6 @@ func TestManySyslogHandler(t *testing.T) {
 	for i := 0; i < n; i++ {
 		hndl := NewSyslogHandler("a")
 		defer hndl.Close()
-		hndl.SetLevel(level.ALL)
 		hndls = append(hndls, hndl)
 	}
 

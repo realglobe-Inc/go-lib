@@ -33,13 +33,11 @@ func newBasicHandlerUsing(sink io.Writer, fmter Formatter) *basicHandler {
 	return &basicHandler{lv: level.ALL, fmter: fmter, sink: sink}
 }
 
-func (hndl *basicHandler) Output(rec Record) {
+func (hndl *basicHandler) Level() level.Level {
 	hndl.lock.Lock()
 	defer hndl.lock.Unlock()
 
-	if !rec.Level().Lower(hndl.lv) {
-		hndl.sink.Write(hndl.fmter.Format(rec))
-	}
+	return hndl.lv
 }
 
 func (hndl *basicHandler) SetLevel(lv level.Level) {
@@ -47,6 +45,15 @@ func (hndl *basicHandler) SetLevel(lv level.Level) {
 	defer hndl.lock.Unlock()
 
 	hndl.lv = lv
+}
+
+func (hndl *basicHandler) Output(rec Record) {
+	hndl.lock.Lock()
+	defer hndl.lock.Unlock()
+
+	if !rec.Level().Lower(hndl.lv) {
+		hndl.sink.Write(hndl.fmter.Format(rec))
+	}
 }
 
 func (hndl *basicHandler) Flush() {
