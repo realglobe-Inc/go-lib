@@ -7,11 +7,26 @@ import (
 	"time"
 )
 
-func testHandler(t *testing.T, hndl Handler) {
-	// ただ走らせるだけ、確認できない。
-	// panic で止まらないことの確認くらいにはなる。
+func testHandlerLevel(t *testing.T, hndl Handler) {
+	if hndl.Level() != level.ALL {
+		t.Error(hndl.Level())
+	}
+
 	for _, lv := range level.Values() {
 		hndl.SetLevel(lv)
+		if hndl.Level() != lv {
+			t.Error(hndl.Level(), lv)
+		}
+	}
+}
+
+func testHandlerOutput(t *testing.T, hndl Handler) {
+	// ただやってみるだけ。
+	// すぐに panic にならないことの確認くらいにはなる。
+
+	hndl.SetLevel(level.INFO)
+
+	for _, lv := range level.Values() {
 		hndl.Output(&record{time.Now(), lv, "test", 0, lv.String()})
 	}
 
