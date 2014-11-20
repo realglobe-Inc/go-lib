@@ -45,6 +45,10 @@ func testLoggerHandler(t *testing.T, mgr Manager) {
 func testLoggerLevel(t *testing.T, mgr Manager) {
 	log := mgr.Logger("a/b/c/d")
 
+	if log.Level() != level.OFF {
+		t.Error(log.Level())
+	}
+
 	for _, lv := range level.Values() {
 		log.SetLevel(lv)
 		if log.Level() != lv {
