@@ -3,7 +3,7 @@ package log
 import (
 	"bufio"
 	"fmt"
-	"github.com/realglobe-Inc/go-lib-rg/erro"
+	"github.com/realglobe-Inc/go-lib/erro"
 	"log"
 	"os"
 	"sync"

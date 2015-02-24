@@ -2,7 +2,7 @@ package handler
 
 import (
 	"fmt"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"log/syslog"
 	"testing"
 	"time"
@@ -29,7 +29,7 @@ func TestSyslogHandlerLevel(t *testing.T) {
 		t.SkipNow()
 	}
 
-	testHandlerLevel(t, NewSyslogHandler("go-lib-rg"))
+	testHandlerLevel(t, NewSyslogHandler("go-lib"))
 }
 
 func TestSyslogHandlerOutput(t *testing.T) {
@@ -37,7 +37,7 @@ func TestSyslogHandlerOutput(t *testing.T) {
 		t.SkipNow()
 	}
 
-	testHandlerOutput(t, NewSyslogHandler("go-lib-rg"))
+	testHandlerOutput(t, NewSyslogHandler("go-lib"))
 }
 
 // TODO 複数のコネクションで大量にログを吐くとデッドロックする場合がある。対処法不明。
@@ -68,5 +68,5 @@ func BenchmarkSyslogHandler(b *testing.B) {
 		b.SkipNow()
 	}
 
-	benchmarkHandler(b, NewSyslogHandler("go-lib-rg"))
+	benchmarkHandler(b, NewSyslogHandler("go-lib"))
 }

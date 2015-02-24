@@ -2,8 +2,8 @@ package logger
 
 import (
 	"fmt"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"github.com/realglobe-Inc/go-lib/rglog/handler"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"runtime"
 	"strings"
 	"sync"

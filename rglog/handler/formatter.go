@@ -2,7 +2,7 @@ package handler
 
 import (
 	"fmt"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"strconv"
 )
 

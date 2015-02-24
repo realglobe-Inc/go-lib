@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"github.com/realglobe-Inc/go-lib/rglog/handler"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 type Logger interface {

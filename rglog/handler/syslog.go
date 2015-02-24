@@ -2,8 +2,8 @@ package handler
 
 import (
 	"fmt"
-	"github.com/realglobe-Inc/go-lib-rg/erro"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"github.com/realglobe-Inc/go-lib/erro"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"log/syslog"
 	"os"
 	"strconv"

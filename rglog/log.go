@@ -1,9 +1,9 @@
 package rglog
 
 import (
-	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/logger"
+	"github.com/realglobe-Inc/go-lib/rglog/handler"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
+	"github.com/realglobe-Inc/go-lib/rglog/logger"
 )
 
 // level ログの重要度。

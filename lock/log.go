@@ -1,7 +1,7 @@
 package lock
 
 import (
-	"github.com/realglobe-Inc/go-lib-rg/rglog"
+	"github.com/realglobe-Inc/go-lib/rglog"
 )
 
-var log = rglog.Logger("github.com/realglobe-Inc/go-lib-rg/lock")
+var log = rglog.Logger("github.com/realglobe-Inc/go-lib/lock")
