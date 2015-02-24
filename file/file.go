@@ -3,8 +3,8 @@ package file
 import (
 	"bytes"
 	"fmt"
-	"github.com/realglobe-Inc/go-lib-rg/erro"
-	"github.com/realglobe-Inc/go-lib-rg/run"
+	"github.com/realglobe-Inc/go-lib/erro"
+	"github.com/realglobe-Inc/go-lib/run"
 	"io/ioutil"
 	"os"
 	"os/user"

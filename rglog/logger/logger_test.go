@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"github.com/realglobe-Inc/go-lib-rg/rglog/handler"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"github.com/realglobe-Inc/go-lib/rglog/handler"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -166,7 +166,7 @@ func testLoggerFileName(t *testing.T, mgr Manager) {
 
 	log.Log(level.INFO, "")
 	dum := hndl.Dump()
-	if dum != filepath.Join("github.com", "realglobe-Inc", "go-lib-rg", "rglog", "logger", "logger_test.go") {
+	if dum != filepath.Join("github.com", "realglobe-Inc", "go-lib", "rglog", "logger", "logger_test.go") {
 		t.Error(dum)
 	}
 
@@ -177,7 +177,7 @@ func testLoggerFileName(t *testing.T, mgr Manager) {
 
 		logging("")
 		dum := hndl.Dump()
-		if dum != filepath.Join("github.com", "realglobe-Inc", "go-lib-rg", "rglog", "logger", "logger_test.go") {
+		if dum != filepath.Join("github.com", "realglobe-Inc", "go-lib", "rglog", "logger", "logger_test.go") {
 			t.Error(dum)
 		}
 	}

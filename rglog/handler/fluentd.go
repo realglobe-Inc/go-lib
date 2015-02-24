@@ -3,7 +3,7 @@ package handler
 import (
 	"container/list"
 	"fmt"
-	"github.com/realglobe-Inc/go-lib-rg/erro"
+	"github.com/realglobe-Inc/go-lib/erro"
 	"io"
 	"net"
 	"os"
@@ -32,7 +32,7 @@ func (core *fluentdCoreHandler) output(rec Record) {
 	//   1308466941,
 	//   {
 	//     "level": "INFO",
-	//     "file": "github.com/realglobe-Inc/go-lib-rg/rglog/handler",
+	//     "file": "github.com/realglobe-Inc/go-lib/rglog/handler",
 	//     "line": 39,
 	//     "message": "Unko!"
 	//   }

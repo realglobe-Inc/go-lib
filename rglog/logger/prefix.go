@@ -20,7 +20,7 @@ func init() {
 		return
 	}
 
-	suffix := filepath.Join("github.com", "realglobe-Inc", "go-lib-rg", "rglog", "logger", "prefix.go")
+	suffix := filepath.Join("github.com", "realglobe-Inc", "go-lib", "rglog", "logger", "prefix.go")
 	if !strings.HasSuffix(file, suffix) {
 		return
 	}

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/realglobe-Inc/go-lib-rg/rglog/level"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"net"
 	"testing"
 	"time"
