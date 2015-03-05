@@ -31,16 +31,17 @@ func lock(path string, flag int) (*Locker, error) {
 		file.Close()
 
 		if err == syscall.EWOULDBLOCK {
+			// ロックできなかった。
 			return nil, nil
 		}
 
 		return nil, erro.Wrap(err)
 	}
 
-	log.Debug("Locked ", file.Name(), ".")
 	return (*Locker)(file), nil
 }
 
+// 解放する。
 func (lock *Locker) Unlock() error {
 	file := (*os.File)(lock)
 	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_UN); err != nil {
@@ -50,20 +51,18 @@ func (lock *Locker) Unlock() error {
 		return erro.Wrap(err)
 	}
 
-	log.Debug("Unlocked ", file.Name(), ".")
 	return nil
 }
 
 // ロックできるか指定した時間が経つまで待つ。
 // ロックできずに指定した時間が経ったら nil を返す。
-func WaitLock(path string, waittime time.Duration) (*Locker, error) {
+func WaitLock(path string, wait time.Duration) (*Locker, error) {
 
-	timeoutCh := time.After(waittime)
+	timer := time.NewTimer(wait)
+	defer timer.Stop()
 	lockerCh := make(chan *Locker, 1)
 	errCh := make(chan error, 1)
-
 	ackCh := make(chan bool, 1)
-
 	go func() {
 		locker, err := Lock(path)
 		if err != nil {
@@ -87,7 +86,7 @@ func WaitLock(path string, waittime time.Duration) (*Locker, error) {
 	case locker := <-lockerCh:
 		ackCh <- true
 		return locker, nil
-	case <-timeoutCh:
+	case <-timer.C:
 		ackCh <- false
 		return nil, nil
 	}
