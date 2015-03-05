@@ -1,215 +1,329 @@
 package lock
 
 import (
+	"github.com/realglobe-Inc/go-lib/erro"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
 )
 
-func TestLock(t *testing.T) {
-	file, err := ioutil.TempFile("", "test_lock")
+func TestLockConcurrency(t *testing.T) {
+	file, err := ioutil.TempFile("", "go-lib-test")
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	}
 	defer os.Remove(file.Name())
+	path := file.Name()
+
 	if err := file.Close(); err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
+	} else if err := os.Remove(path); err != nil {
+		t.Error(err)
+		return
 	}
-
-	if err := os.Remove(file.Name()); err != nil {
-		t.Fatal(err)
-	}
-
-	n := 10
-	loop := 1000
 
 	counter := 0
+	errCh := make(chan error)
 
-	timeout := time.After(time.Duration(int64(n*loop*1000) * int64(time.Microsecond)))
-
-	ch := make(chan int)
-	lockPath := file.Name()
+	n := 100
+	loop := 100
 	for i := 0; i < n; i++ {
 		go func(id int) {
-			defer func() { ch <- 0 }()
-
 			for j := 0; j < loop; j++ {
-				var lock *Locker
-				for lock == nil {
-					var err error
-					lock, err = Lock(lockPath)
-					if err != nil {
-						t.Error(id, j, err)
-						return
-					}
+				lock, err := Lock(path)
+				if err != nil {
+					errCh <- erro.New(err)
+					return
 				}
 
 				counter++
+
 				if err := lock.Unlock(); err != nil {
-					t.Error(id, j, err)
+					errCh <- erro.New(err)
 					return
 				}
 			}
+			errCh <- nil
 		}(i)
 	}
 
 	// 終了待ち。
 	for i := 0; i < n; i++ {
-		select {
-		case <-ch:
-		case <-timeout:
-			t.Fatal("Dead lock?")
+		if err := <-errCh; err != nil {
+			t.Error(err)
 		}
 	}
 
 	if counter != n*loop {
-		t.Error(counter, n, loop, file.Name())
+		t.Error(counter, n*loop)
+	}
+}
+
+func TestTryLockConcurrency(t *testing.T) {
+	file, err := ioutil.TempFile("", "test_lock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	path := file.Name()
+
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	} else if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+
+	n := 100
+	loop := 100
+
+	counter := 0
+
+	succCh := make(chan int)
+	errCh := make(chan error)
+	for i := 0; i < n; i++ {
+		go func(id int) {
+			succ := 0
+			defer func() { succCh <- succ }()
+
+			for j := 0; j < loop; j++ {
+				lock, err := TryLock(path)
+				if err != nil {
+					errCh <- erro.Wrap(err)
+					return
+				} else if lock == nil {
+					continue
+				}
+
+				counter++
+				succ++
+
+				if err := lock.Unlock(); err != nil {
+					errCh <- erro.Wrap(err)
+					return
+				}
+			}
+
+			errCh <- nil
+		}(i)
+	}
+
+	// 終了待ち。
+	for i := 0; i < n; i++ {
+		if err := <-errCh; err != nil {
+			t.Error(err)
+		}
+	}
+
+	sum := 0
+	for i := 0; i < n; i++ {
+		sum += <-succCh
+	}
+
+	if counter == 0 {
+		t.Error(counter)
+	} else if counter != sum {
+		t.Error(counter, sum)
+	}
+}
+
+func TestWaitLockConcurrency(t *testing.T) {
+	file, err := ioutil.TempFile("", "test_lock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	path := file.Name()
+
+	if err := file.Close(); err != nil {
+		t.Fatal(err)
+	} else if err := os.Remove(path); err != nil {
+		t.Fatal(err)
+	}
+
+	n := 100
+	loop := 100
+	wait := 10 * time.Millisecond
+
+	counter := 0
+
+	succCh := make(chan int)
+	errCh := make(chan error)
+	for i := 0; i < n; i++ {
+		go func(id int) {
+			succ := 0
+			defer func() { succCh <- succ }()
+
+			for j := 0; j < loop; j++ {
+				lock, err := WaitLock(path, wait)
+				if err != nil {
+					errCh <- erro.Wrap(err)
+					return
+				} else if lock == nil {
+					continue
+				}
+
+				counter++
+				succ++
+
+				if err := lock.Unlock(); err != nil {
+					errCh <- erro.Wrap(err)
+					return
+				}
+			}
+
+			errCh <- nil
+		}(i)
+	}
+
+	// 終了待ち。
+	for i := 0; i < n; i++ {
+		if err := <-errCh; err != nil {
+			t.Error(err)
+		}
+	}
+
+	sum := 0
+	for i := 0; i < n; i++ {
+		sum += <-succCh
+	}
+
+	if counter == 0 {
+		t.Error(counter)
+	} else if counter != sum {
+		t.Error(counter, sum)
 	}
 }
 
 func BenchmarkLock(b *testing.B) {
-	file, err := ioutil.TempFile("", "test_lock")
+	file, err := ioutil.TempFile("", "go-lib-test")
 	if err != nil {
 		b.Fatal(err)
 	}
 	defer os.Remove(file.Name())
+	path := file.Name()
+
 	if err := file.Close(); err != nil {
 		b.Fatal(err)
 	}
 
-	timeout := time.After(time.Duration(int64(b.N*1000) * int64(time.Microsecond)))
-	ch := make(chan error)
-	lockPath := file.Name()
-	go func() {
-		for j := 0; j < b.N; j++ {
-			var lock *Locker
-
-			for lock == nil {
-				var err error
-				lock, err = Lock(lockPath)
-				if err != nil {
-					ch <- err
-					return
-				}
-			}
-
-			if err := lock.Unlock(); err != nil {
-				ch <- err
-				return
-			}
-		}
-
-		ch <- nil
-	}()
-
-	// 終了待ち。
-	select {
-	case err := <-ch:
+	for i := 0; i < b.N; i++ {
+		lock, err := Lock(path)
 		if err != nil {
-			b.Fatal(err)
+			b.Error(err)
+			return
 		}
-	case <-timeout:
-		b.Fatal("Dead lock?")
+
+		if err := lock.Unlock(); err != nil {
+			b.Error(err)
+			return
+		}
+	}
+}
+
+func BenchmarkTryLock(b *testing.B) {
+	file, err := ioutil.TempFile("", "go-lib-test")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	path := file.Name()
+
+	if err := file.Close(); err != nil {
+		b.Fatal(err)
+	}
+
+	for i := 0; i < b.N; i++ {
+		lock, err := TryLock(path)
+		if err != nil {
+			b.Error(err)
+			return
+		} else if lock == nil {
+			b.Error("lock failed")
+			return
+		}
+
+		if err := lock.Unlock(); err != nil {
+			b.Error(err)
+			return
+		}
+	}
+}
+
+func BenchmarkWaitLock(b *testing.B) {
+	file, err := ioutil.TempFile("", "go-lib-test")
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer os.Remove(file.Name())
+	path := file.Name()
+
+	if err := file.Close(); err != nil {
+		b.Fatal(err)
+	}
+
+	wait := 10 * time.Millisecond
+	for i := 0; i < b.N; i++ {
+		lock, err := WaitLock(path, wait)
+		if err != nil {
+			b.Error(err)
+			return
+		} else if lock == nil {
+			b.Error("lock failed")
+			return
+		}
+
+		if err := lock.Unlock(); err != nil {
+			b.Error(err)
+			return
+		}
 	}
 }
 
 func TestReentrant(t *testing.T) {
-	file, err := ioutil.TempFile("", "test_lock")
+	file, err := ioutil.TempFile("", "go-lib-test")
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	}
 	defer os.Remove(file.Name())
+	path := file.Name()
+
 	if err := file.Close(); err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
+	} else if err := os.Remove(path); err != nil {
+		t.Error(err)
+		return
 	}
 
-	if err := os.Remove(file.Name()); err != nil {
-		t.Fatal(err)
-	}
-
-	lock, err := Lock(file.Name())
+	lock, err := Lock(path)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	}
 	defer lock.Unlock()
 
-	lock, err = TryLock(file.Name())
+	lock, err = TryLock(path)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	} else if lock != nil {
-		defer lock.Unlock()
+		lock.Unlock()
 		t.Error(lock)
+		return
 	}
 
-	lock, err = WaitLock(file.Name(), time.Nanosecond)
+	lock, err = WaitLock(path, time.Millisecond)
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
+		return
 	} else if lock != nil {
-		defer lock.Unlock()
+		lock.Unlock()
 		t.Error(lock)
-	}
-
-}
-
-func TestWaitLock(t *testing.T) {
-	file, err := ioutil.TempFile("", "test_lock")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(file.Name())
-	if err := file.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := os.Remove(file.Name()); err != nil {
-		t.Fatal(err)
-	}
-
-	n := 10
-	loop := 1000
-
-	counter := 0
-
-	timeout := time.After(time.Duration(int64(n*loop*1000) * int64(time.Microsecond)))
-
-	ch := make(chan int)
-	lockPath := file.Name()
-	for i := 0; i < n; i++ {
-		go func(id int) {
-			defer func() { ch <- 0 }()
-
-			for j := 0; j < loop; j++ {
-				var lock *Locker
-				for lock == nil {
-					var err error
-					lock, err = WaitLock(lockPath, time.Second)
-					if err != nil {
-						t.Error(id, j, err)
-						return
-					}
-				}
-
-				counter++
-				if err := lock.Unlock(); err != nil {
-					t.Error(id, j, err)
-					return
-				}
-			}
-		}(i)
-	}
-
-	// 終了待ち。
-	for i := 0; i < n; i++ {
-		select {
-		case <-ch:
-		case <-timeout:
-			t.Fatal("Dead lock?")
-		}
-	}
-
-	if counter != n*loop {
-		t.Error(counter, n, loop, file.Name())
+		return
 	}
 }
 
@@ -219,78 +333,31 @@ func TestTimeout(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove(file.Name())
+	path := file.Name()
+
 	if err := file.Close(); err != nil {
 		t.Fatal(err)
-	}
-
-	if err := os.Remove(file.Name()); err != nil {
+	} else if err := os.Remove(path); err != nil {
 		t.Fatal(err)
 	}
 
-	lock, err := Lock(file.Name())
+	lock, err := Lock(path)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer lock.Unlock()
 
-	min := time.Second
-	max := min + time.Second
+	wait := 10 * time.Millisecond
 
 	start := time.Now()
-	lock, err = WaitLock(file.Name(), (min+max)/2)
+	lock, err = WaitLock(path, wait)
+	dur := time.Since(start)
 	if err != nil {
 		t.Fatal(err)
 	} else if lock != nil {
-		defer lock.Unlock()
+		lock.Unlock()
 		t.Error(lock)
-	} else if dur := time.Since(start); dur <= min || max <= dur {
+	} else if dur < wait || wait+time.Second < dur {
 		t.Error(dur)
-	}
-
-}
-
-func BenchmarkWaitLock(b *testing.B) {
-	file, err := ioutil.TempFile("", "test_lock")
-	if err != nil {
-		b.Fatal(err)
-	}
-	defer os.Remove(file.Name())
-	if err := file.Close(); err != nil {
-		b.Fatal(err)
-	}
-
-	timeout := time.After(time.Duration(int64(b.N*1000) * int64(time.Microsecond)))
-	ch := make(chan error)
-	lockPath := file.Name()
-	go func() {
-		for j := 0; j < b.N; j++ {
-			var lock *Locker
-
-			for lock == nil {
-				var err error
-				lock, err = WaitLock(lockPath, time.Second)
-				if err != nil {
-					ch <- err
-					return
-				}
-			}
-
-			if err := lock.Unlock(); err != nil {
-				ch <- err
-				return
-			}
-		}
-
-		ch <- nil
-	}()
-
-	// 終了待ち。
-	select {
-	case err := <-ch:
-		if err != nil {
-			b.Fatal(err)
-		}
-	case <-timeout:
-		b.Fatal("Dead lock?")
 	}
 }
