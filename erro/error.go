@@ -1,73 +1,69 @@
 package erro
 
 import (
+	"errors"
 	"fmt"
 	"runtime"
 )
 
-// デバッグ用エラー。
+// スタックトレース付きエラー。
 type Tracer struct {
 	cause error
 	trace string
 }
 
-func (err *Tracer) Error() string {
-	return err.cause.Error() + "\n" +
-		//"--------------------------------------------------\n" +
-		err.trace
+// error を実装。
+func (tr *Tracer) Error() string {
+	return tr.Cause().Error() + "\n" + tr.Stack()
 }
 
-func (err *Tracer) Cause() error {
-	return err.cause
+// 素のエラーを返す。
+func (tr *Tracer) Cause() error {
+	return tr.cause
 }
 
-func (err *Tracer) Stack() string {
-	return err.trace
+// 表示用スタックトレースを返す。
+func (tr *Tracer) Stack() string {
+	return tr.trace
 }
 
+// 表示用スタックトレースの最大バイト長。
 const traceLen = 8192
 
-// スタックトレースを付加する。
-// nil をそのまま返すので、 return Wrap(func() error) みたいな使い方ができる。
-// 囲うのは最初だけでも良いし、既に Wrap されている場合はそのまま返すので、
-// 最初かどうか分からなければ、毎回囲っても良い。
-// スタックトレースの先頭はこの関数になるが、気にしない。
+// スタックトレースを付加する。スタックトレースの先頭はこの関数になってしまうが、気にするな。
+// nil はそのまま返すので、 return Wrap(func() error) みたいな使い方もできる。
+// 既に Wrap されている場合はそのまま返すので、毎回 Wrap しても良い。
 func Wrap(err error) error {
 	if err == nil {
 		return nil
-	} else if _, ok := err.(*Tracer); ok {
-		return err
+	} else if tr, ok := err.(*Tracer); ok {
+		return tr
 	}
 
 	buff := make([]byte, traceLen)
-	len := runtime.Stack(buff, false)
+	runtime.Stack(buff, false)
 
-	for len > 0 && buff[len-1] == '\n' {
-		len--
+	// 普通、Error() の返り値の末尾に改行は付かないので、末尾の改行を削除する。
+	for ; len(buff) > 0 && buff[len(buff)-1] == '\n'; buff = buff[:len(buff)-1] {
 	}
 
-	return &Tracer{err, string(buff[:len])}
+	return &Tracer{err, string(buff)}
 }
 
+// スタックトレース付きエラーだったら、素のエラーを取り出す。
+// そうでなければ、そのまま返す。
 func Unwrap(err error) error {
-	for {
-		tr, ok := err.(*Tracer)
-		if ok {
-			err = tr.cause
-		} else {
-			return err
-		}
+	if err == nil {
+		return nil
+	} else if tr, ok := err.(*Tracer); ok {
+		return tr.Cause()
+	} else {
+		return err
 	}
 }
 
-type Error string
-
-func (err Error) Error() string {
-	return string(err)
-}
-
-// 引数から 1 つの文字列をつくって最初のエラーにして、それを Wrap して返す。
-// 文字列の成形は fmt.Print() 形式。
+// スタックトレース付きのエラーをつくる。
+// 素のエラーは erros.New(fmt.Sprint(a...)) でつくる。
 func New(a ...interface{}) error {
-	return Wrap(Error(fmt.Sprint(a...)))
+	return Wrap(errors.New(fmt.Sprint(a...)))
 }

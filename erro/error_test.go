@@ -1,49 +1,63 @@
 package erro
 
 import (
+	"errors"
+	"reflect"
 	"testing"
 )
 
-func TestWrap(t *testing.T) {
+func TestWrapNil(t *testing.T) {
 	if Wrap(nil) != nil {
-		t.Error(nil)
+		t.Error("not nil")
 	}
+}
 
-	msg := "aho"
+func TestWrapTracer(t *testing.T) {
+	tr := New("test")
+	if Wrap(tr) != tr {
+		t.Error("not through")
+	}
+}
+
+func TestWrap(t *testing.T) {
+	msg := "test"
 	err := New(msg)
 
-	if Wrap(err) != err {
-		t.Error(err)
+	if tr, ok := err.(*Tracer); !ok {
+		t.Error(reflect.TypeOf(err))
+	} else if tr.Stack() == "" {
+		t.Error(tr.Stack())
+	} else if cause := tr.Cause(); cause.Error() != msg {
+		t.Error(cause.Error(), msg)
+	} else if m := tr.Error(); len(m) <= len(cause.Error()) || len(m) <= len(tr.Stack()) {
+		t.Error(m)
+		t.Error(cause.Error())
+		t.Error(tr.Stack())
 	}
+}
 
-	tr, ok := err.(*Tracer)
-	if !ok {
-		t.Fatal(err)
+func TestUnwrapNil(t *testing.T) {
+	if Unwrap(nil) != nil {
+		t.Error("not nil")
 	}
+}
 
-	var err2 Error
-	err2, ok = tr.Cause().(Error)
-	if !ok {
-		t.Fatal(tr.Cause())
-	}
-
-	if string(err2) != msg {
-		t.Error(tr.Cause())
+func TestUnwrapNonTracer(t *testing.T) {
+	err := errors.New("test")
+	if Unwrap(err) != err {
+		t.Error("not through")
 	}
 }
 
 func TestUnwrap(t *testing.T) {
-	if Unwrap(nil) != nil {
-		t.Error(nil)
-	}
-
-	msg := "aho"
-	if Unwrap(Error(msg)) != Error(msg) {
-		t.Error(msg)
-	}
-
+	msg := "test"
 	err := New(msg)
-	if Unwrap(err) != Error(msg) {
-		t.Error(err)
+
+	if cause := Unwrap(err); cause == err {
+		t.Error(cause)
+	} else if _, ok := cause.(*Tracer); ok {
+		t.Error(cause)
+	} else if cause.Error() != msg {
+		t.Error(cause.Error(), msg)
 	}
 }
