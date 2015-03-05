@@ -1,14 +1,13 @@
-rglog
-==========
+# rglog
 
 リアルグローブ式ロガー。
 
-使い方
-----------
+
+## 使い方
 
 プログラム実行のはじめのうちに標準動作を設定する。
 
-```
+```Go
 import (
 	...
 	"github.com/realglobe-Inc/go-lib/rglog"
@@ -35,7 +34,7 @@ func main() {
 	hndl.SetLevel(level.INFO)
 	log.AddHandler("console", hndl)
 
-	// ファイル path に、最大 size バイト、バックアップ数 n 個までで、デバッグ情報まで書き出させる。
+	// ファイル path に、最大 size バイト、最大 n ファイルで、デバッグ情報まで書き出させる。
 	hndl = handler.NewRotateHandler(path, size, n)
 	// handler.Handler のデフォルトレベルは基本的に level.ALL。
 	log.AddHandler("file", hndl)
@@ -49,7 +48,7 @@ func main() {
 
 使用したいところで、適当な Logger を取得して使う。
 
-```
+```Go
 import (
 	...
 	"github.com/realglobe-Inc/go-lib/rglog"
@@ -67,7 +66,7 @@ func Function() {
 
 何度も使うなら初期化時に取得しておくと良い。
 
-```
+```Go
 var log = rglog.Logger("a/b/c/d")
 
 ...
@@ -84,7 +83,7 @@ func Function() {
 
 ログメッセージの生成が重いなら、IsLoggable で handler.Handler にログが渡されない場合には飛ばすこともできる。
 
-```
+```Go
 func Function() {
 	...
 	if log.IsLoggable(level.INFO) {
