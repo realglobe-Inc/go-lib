@@ -40,7 +40,7 @@ func g() error {
 ```Go
 	err := g()
 	if err != nil {
-		switch e := erro.Unwrap(err).(type) {
+		switch e := Unwrap(err).(type) {
 		case *net.OpError:
 			...
 		default:
