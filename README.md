@@ -18,3 +18,8 @@ limitations under the License.
 # go-lib
 
 プロジェクトにまたがるパッケージ群。
+
+
+## ライセンス
+
+Apache License, Version 2.0
