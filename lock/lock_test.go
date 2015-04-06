@@ -362,6 +362,7 @@ func TestTimeout(t *testing.T) {
 	defer lock.Unlock()
 
 	wait := 10 * time.Millisecond
+	delay := 5 * time.Second // 低性能だと 3, 4 秒は平気で寝る。
 
 	start := time.Now()
 	lock, err = WaitLock(path, wait)
@@ -371,7 +372,7 @@ func TestTimeout(t *testing.T) {
 	} else if lock != nil {
 		lock.Unlock()
 		t.Error(lock)
-	} else if dur < wait || wait+time.Second < dur {
+	} else if dur < wait || wait+delay < dur {
 		t.Error(dur)
 	}
 }
