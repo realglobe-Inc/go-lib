@@ -43,7 +43,7 @@ func main() {
 	defer rglog.Flush()
 	// これより上には遡らせない。
 	log.SetUseParent(false)
-	// 全てのログを登録されている handler.Handler に渡させる。logger.Logger のデフォルトレベルは基本的に level.OFF。
+	// 全てのログを登録されている handler.Handler に渡させる。logger.Logger の初期レベルは基本的に level.OFF。
 	log.SetLevel(level.ALL)
 
 	// 標準エラー出力に level.INFO 以上を書き出させる。
@@ -53,7 +53,7 @@ func main() {
 
 	// ファイル path に、最大 size バイト、最大 n ファイルで、デバッグ情報まで書き出させる。
 	hndl = handler.NewRotateHandler(path, size, n)
-	// handler.Handler のデフォルトレベルは基本的に level.ALL。
+	// handler.Handler の初期レベルは基本的に level.ALL。
 	log.AddHandler("file", hndl)
 	...
 }
