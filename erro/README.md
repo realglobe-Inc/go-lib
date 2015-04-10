@@ -20,7 +20,7 @@ limitations under the License.
 スタックトレース付きエラー。
 
 
-## 使い方
+## 1. 使い方
 
 エラーを投げる方では、
 
