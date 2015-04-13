@@ -20,6 +20,6 @@ limitations under the License.
 プロジェクトにまたがるパッケージ群。
 
 
-## ライセンス
+## 1. ライセンス
 
 Apache License, Version 2.0
