@@ -55,11 +55,11 @@ func Wrap(err error) error {
 	}
 
 	buff := make([]byte, traceLen)
-	runtime.Stack(buff, false)
-
+	n := runtime.Stack(buff, false)
 	// 普通、Error() の返り値の末尾に改行は付かないので、末尾の改行を削除する。
-	for ; len(buff) > 0 && buff[len(buff)-1] == '\n'; buff = buff[:len(buff)-1] {
+	for ; n > 0 && buff[n-1] == '\n'; n-- {
 	}
+	buff = buff[:n]
 
 	return &Tracer{err, string(buff)}
 }
