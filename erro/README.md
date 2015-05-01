@@ -51,3 +51,13 @@ func g() error {
 ```
 
 こんな感じ。
+
+
+## 2. API
+
+[GoDoc](http://godoc.org/github.com/realglobe-Inc/go-lib/erro)
+
+
+## 3. ライセンス
+
+Apache License, Version 2.0
