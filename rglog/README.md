@@ -110,3 +110,13 @@ func Function() {
 	...
 }
 ```
+
+
+## 2. API
+
+[GoDoc](http://godoc.org/github.com/realglobe-Inc/go-lib/rglog)
+
+
+## 3. ライセンス
+
+Apache License, Version 2.0

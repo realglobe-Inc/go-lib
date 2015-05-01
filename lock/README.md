@@ -18,3 +18,13 @@ limitations under the License.
 # lock
 
 ロックファイル式ロック。
+
+
+## 1. API
+
+[GoDoc](http://godoc.org/github.com/realglobe-Inc/go-lib/lock)
+
+
+## 2. ライセンス
+
+Apache License, Version 2.0
