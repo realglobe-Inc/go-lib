@@ -29,30 +29,30 @@ func testLoggerHandler(t *testing.T, mgr Manager) {
 	log := mgr.Logger("a/b/c/d")
 
 	if hndl := log.Handler("test"); hndl != nil {
-		t.Error(hndl)
+		t.Fatal(hndl)
 	}
 
 	memHndl := handler.NewNopHandler()
 	if hndl := log.AddHandler("test", memHndl); hndl != nil {
-		t.Error(hndl)
+		t.Fatal(hndl)
 	}
 
 	oldHndl := log.Handler("test")
 	if oldHndl != memHndl {
-		t.Error(oldHndl, memHndl)
+		t.Fatal(oldHndl, memHndl)
 	}
 
 	memHndl = handler.NewNopHandler()
 	if hndl := log.AddHandler("test", memHndl); hndl != oldHndl {
-		t.Error(hndl, oldHndl)
+		t.Fatal(hndl, oldHndl)
 	}
 
 	if hndl := log.RemoveHandler("test"); hndl != memHndl {
-		t.Error(hndl, memHndl)
+		t.Fatal(hndl, memHndl)
 	}
 
 	if hndl := log.Handler("test"); hndl != nil {
-		t.Error(hndl)
+		t.Fatal(hndl)
 	}
 }
 
@@ -60,13 +60,13 @@ func testLoggerLevel(t *testing.T, mgr Manager) {
 	log := mgr.Logger("a/b/c/d")
 
 	if log.Level() != level.OFF {
-		t.Error(log.Level())
+		t.Fatal(log.Level())
 	}
 
 	for _, lv := range level.Values() {
 		log.SetLevel(lv)
 		if log.Level() != lv {
-			t.Error(log.Level(), lv)
+			t.Fatal(log.Level(), lv)
 		}
 	}
 }
@@ -77,7 +77,7 @@ func testLoggerUseParent(t *testing.T, mgr Manager) {
 	for _, b := range []bool{true, false} {
 		log.SetUseParent(b)
 		if log.UseParent() != b {
-			t.Error(log.UseParent(), b)
+			t.Fatal(log.UseParent(), b)
 		}
 	}
 }
@@ -97,19 +97,19 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 
 	// ハンドラが無い、先祖にハンドラが無い。
 	if log.IsLoggable(level.INFO) {
-		t.Error("true: no handler, no handler")
+		t.Fatal("true: no handler, no handler")
 	}
 
 	log.AddHandler("test", handler.NewNopHandler())
 
 	// 基準重要度より低い、先祖にハンドラが無い。
 	if log.IsLoggable(level.DEBUG) {
-		t.Error("true: lower level, no handler")
+		t.Fatal("true: lower level, no handler")
 	}
 
 	// 基準重要度より高い、先祖にハンドラが無い。
 	if !log.IsLoggable(level.INFO) {
-		t.Error("false: upper or equal level, no handler")
+		t.Fatal("false: upper or equal level, no handler")
 	}
 
 	log.RemoveHandler("test")
@@ -118,19 +118,19 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 
 	// ハンドラが無い、先祖の基準重要度より低い。
 	if log.IsLoggable(level.INFO) {
-		t.Error("true: no handler, lower level")
+		t.Fatal("true: no handler, lower level")
 	}
 
 	log.AddHandler("test", handler.NewNopHandler())
 
 	// 基準重要度より低い、先祖の基準重要度より低い。
 	if log.IsLoggable(level.DEBUG) {
-		t.Error("true: lower level, lower level")
+		t.Fatal("true: lower level, lower level")
 	}
 
 	// 基準重要度より高い、先祖の基準重要度より低い。
 	if !log.IsLoggable(level.INFO) {
-		t.Error("false: upper or equal level, lower level")
+		t.Fatal("false: upper or equal level, lower level")
 	}
 
 	log.RemoveHandler("test")
@@ -139,19 +139,19 @@ func testLoggerIsLoggable(t *testing.T, mgr Manager) {
 
 	// ハンドラが無い、先祖の基準重要度より高い。
 	if !log.IsLoggable(level.INFO) {
-		t.Error("false: no handler, upper level")
+		t.Fatal("false: no handler, upper level")
 	}
 
 	log.AddHandler("test", handler.NewNopHandler())
 
 	// 基準重要度より低い、先祖の基準重要度より高い。
 	if !log.IsLoggable(level.DEBUG) {
-		t.Error("true: lower level, upper level")
+		t.Fatal("true: lower level, upper level")
 	}
 
 	// 基準重要度より高い、先祖の基準重要度より高い。
 	if !log.IsLoggable(level.INFO) {
-		t.Error("false: upper or equal level, upper level")
+		t.Fatal("false: upper or equal level, upper level")
 	}
 }
 
@@ -181,7 +181,7 @@ func testLoggerFileName(t *testing.T, mgr Manager) {
 	log.Log(level.INFO, "")
 	dum := hndl.Dump()
 	if dum != filepath.Join("github.com", "realglobe-Inc", "go-lib", "rglog", "logger", "logger_test.go") {
-		t.Error(dum)
+		t.Fatal(dum)
 	}
 
 	for _, logging := range []func(...interface{}){log.Err, log.Warn, log.Info, log.Debug} {
@@ -192,7 +192,7 @@ func testLoggerFileName(t *testing.T, mgr Manager) {
 		logging("")
 		dum := hndl.Dump()
 		if dum != filepath.Join("github.com", "realglobe-Inc", "go-lib", "rglog", "logger", "logger_test.go") {
-			t.Error(dum)
+			t.Fatal(dum)
 		}
 	}
 }
@@ -258,7 +258,7 @@ func testLoggerConcurrent(t *testing.T, mgr Manager) {
 
 	lines := strings.Split(buff, "\n")
 	if len(lines) != conc*loop {
-		t.Error(len(lines), conc*loop)
+		t.Fatal(len(lines), conc*loop)
 	}
 }
 

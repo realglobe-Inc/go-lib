@@ -23,13 +23,13 @@ import (
 
 func testHandlerLevel(t *testing.T, hndl Handler) {
 	if hndl.Level() != level.ALL {
-		t.Error(hndl.Level())
+		t.Fatal(hndl.Level())
 	}
 
 	for _, lv := range level.Values() {
 		hndl.SetLevel(lv)
 		if hndl.Level() != lv {
-			t.Error(hndl.Level(), lv)
+			t.Fatal(hndl.Level(), lv)
 		}
 	}
 }

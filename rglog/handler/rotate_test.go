@@ -90,7 +90,7 @@ func TestRotateHandlerRotation(t *testing.T) {
 	for i := 1; i <= num; i++ {
 		bak := path + "." + strconv.Itoa(i)
 		if _, err := os.Stat(bak); err != nil {
-			t.Error(bak, err)
+			t.Fatal(bak, err)
 		}
 	}
 }
@@ -123,7 +123,7 @@ func TestRotateHandlerLogging(t *testing.T) {
 
 	lines := strings.Split(string(buff), "\n")
 	if len(lines) != n {
-		t.Error(n, len(lines))
+		t.Fatal(n, len(lines))
 	}
 }
 

@@ -25,18 +25,15 @@ import (
 func TestLockConcurrency(t *testing.T) {
 	file, err := ioutil.TempFile("", "go-lib-test")
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	}
 	defer os.Remove(file.Name())
 	path := file.Name()
 
 	if err := file.Close(); err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	} else if err := os.Remove(path); err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	}
 
 	counter := 0
@@ -67,12 +64,12 @@ func TestLockConcurrency(t *testing.T) {
 	// 終了待ち。
 	for i := 0; i < n; i++ {
 		if err := <-errCh; err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 	}
 
 	if counter != n*loop {
-		t.Error(counter, n*loop)
+		t.Fatal(counter, n*loop)
 	}
 }
 
@@ -127,7 +124,7 @@ func TestTryLockConcurrency(t *testing.T) {
 	// 終了待ち。
 	for i := 0; i < n; i++ {
 		if err := <-errCh; err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 	}
 
@@ -137,9 +134,9 @@ func TestTryLockConcurrency(t *testing.T) {
 	}
 
 	if counter == 0 {
-		t.Error(counter)
+		t.Fatal(counter)
 	} else if counter != sum {
-		t.Error(counter, sum)
+		t.Fatal(counter, sum)
 	}
 }
 
@@ -195,7 +192,7 @@ func TestWaitLockConcurrency(t *testing.T) {
 	// 終了待ち。
 	for i := 0; i < n; i++ {
 		if err := <-errCh; err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 	}
 
@@ -205,9 +202,9 @@ func TestWaitLockConcurrency(t *testing.T) {
 	}
 
 	if counter == 0 {
-		t.Error(counter)
+		t.Fatal(counter)
 	} else if counter != sum {
-		t.Error(counter, sum)
+		t.Fatal(counter, sum)
 	}
 }
 
@@ -299,45 +296,37 @@ func BenchmarkWaitLock(b *testing.B) {
 func TestReentrant(t *testing.T) {
 	file, err := ioutil.TempFile("", "go-lib-test")
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	}
 	defer os.Remove(file.Name())
 	path := file.Name()
 
 	if err := file.Close(); err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	} else if err := os.Remove(path); err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	}
 
 	lock, err := Lock(path)
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	}
 	defer lock.Unlock()
 
 	lock, err = TryLock(path)
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	} else if lock != nil {
 		lock.Unlock()
-		t.Error(lock)
-		return
+		t.Fatal(lock)
 	}
 
 	lock, err = WaitLock(path, time.Millisecond)
 	if err != nil {
-		t.Error(err)
-		return
+		t.Fatal(err)
 	} else if lock != nil {
 		lock.Unlock()
-		t.Error(lock)
-		return
+		t.Fatal(lock)
 	}
 }
 
@@ -370,8 +359,8 @@ func TestTimeout(t *testing.T) {
 		t.Fatal(err)
 	} else if lock != nil {
 		lock.Unlock()
-		t.Error(lock)
+		t.Fatal(lock)
 	} else if dur < wait {
-		t.Error(dur)
+		t.Fatal(dur)
 	}
 }
