@@ -60,7 +60,7 @@ func TestVar(t *testing.T) {
 	for _, lv := range Values() {
 		flags := flag.NewFlagSet("test", flag.ExitOnError)
 		var lv2 Level
-		flags.Var(Var(&lv2, INFO), "lv", "Log level.")
+		flags.Var(Var(&lv2, INFO), "lv", "Log level")
 		flags.Parse([]string{"-lv", lv.String()})
 		if lv2 != lv {
 			t.Fatal(lv)

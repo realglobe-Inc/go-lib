@@ -103,7 +103,7 @@ func messagePackString(val string) []byte {
 		// str32.
 		buff = append(buff, 0xdb, byte((length&(0xff<<24))>>24), byte((length&(0xff<<16))>>16), byte((length&(0xff<<8))>>8), byte(length&0xff))
 	} else {
-		panic("too long string " + strconv.Itoa(length) + ".")
+		panic("too long string " + strconv.Itoa(length))
 	}
 	buff = append(buff, []byte(val)...)
 	return buff

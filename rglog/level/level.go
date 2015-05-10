@@ -74,7 +74,7 @@ func ValueOf(label string) (Level, error) {
 	if ok {
 		return lv, nil
 	} else {
-		return 0, erro.New("level " + label + " is not exist.")
+		return 0, erro.New("level " + label + " is not exist")
 	}
 }
 
@@ -101,7 +101,7 @@ func (v levelVar) Set(s string) error {
 	return nil
 }
 
-// flags.Var(Var(&param, level.INFO), "level", "Log level.") の形で使う。
+// flags.Var(Var(&param, level.INFO), "level", "Log level") の形で使う。
 func Var(lv *Level, defaultLv Level) levelVar {
 	*lv = defaultLv
 	return levelVar{lv}
