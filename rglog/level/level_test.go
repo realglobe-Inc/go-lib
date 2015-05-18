@@ -25,21 +25,21 @@ func TestCompare(t *testing.T) {
 		for j := 0; j < len(lvs); j++ {
 			if i == j {
 				if lvs[i].Higher(lvs[j]) {
-					t.Error(lvs[i], lvs[j])
+					t.Fatal(lvs[i], lvs[j])
 				} else if lvs[i].Lower(lvs[j]) {
-					t.Error(lvs[i], lvs[j])
+					t.Fatal(lvs[i], lvs[j])
 				}
 			} else if i < j {
 				if !lvs[i].Higher(lvs[j]) {
-					t.Error(lvs[i], lvs[j])
+					t.Fatal(lvs[i], lvs[j])
 				} else if lvs[i].Lower(lvs[j]) {
-					t.Error(lvs[i], lvs[j])
+					t.Fatal(lvs[i], lvs[j])
 				}
 			} else {
 				if lvs[i].Higher(lvs[j]) {
-					t.Error(lvs[i], lvs[j])
+					t.Fatal(lvs[i], lvs[j])
 				} else if !lvs[i].Lower(lvs[j]) {
-					t.Error(lvs[i], lvs[j])
+					t.Fatal(lvs[i], lvs[j])
 				}
 			}
 		}
@@ -49,9 +49,9 @@ func TestCompare(t *testing.T) {
 func TestConvert(t *testing.T) {
 	for _, lv := range Values() {
 		if lv2, err := ValueOf(lv.String()); err != nil {
-			t.Error(lv)
+			t.Fatal(lv)
 		} else if lv2 != lv {
-			t.Error(lv)
+			t.Fatal(lv)
 		}
 	}
 }
@@ -60,10 +60,10 @@ func TestVar(t *testing.T) {
 	for _, lv := range Values() {
 		flags := flag.NewFlagSet("test", flag.ExitOnError)
 		var lv2 Level
-		flags.Var(Var(&lv2, INFO), "lv", "Log level.")
+		flags.Var(Var(&lv2, INFO), "lv", "Log level")
 		flags.Parse([]string{"-lv", lv.String()})
 		if lv2 != lv {
-			t.Error(lv)
+			t.Fatal(lv)
 		}
 	}
 }

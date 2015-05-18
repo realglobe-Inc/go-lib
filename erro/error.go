@@ -50,8 +50,8 @@ const traceLen = 8192
 func Wrap(err error) error {
 	if err == nil {
 		return nil
-	} else if tr, ok := err.(*Tracer); ok {
-		return tr
+	} else if _, ok := err.(*Tracer); ok {
+		return err
 	}
 
 	buff := make([]byte, traceLen)
