@@ -24,7 +24,7 @@ import (
 // ログにコンパイル環境の恥ずかしいパスとかを載せないように。
 
 // ${GOPATH}/src/ の部分。
-var uselessPrefix string
+var uselessPref string
 
 func init() {
 	// このファイルの名前から ${GOPATH}/src/ を逆算する。
@@ -39,13 +39,13 @@ func init() {
 		return
 	}
 
-	uselessPrefix = file[:len(file)-len(suffix)]
+	uselessPref = file[:len(file)-len(suffix)]
 }
 
 // ファイル名から ${GOPATH}/src/ の部分を除く。
 func trimPrefix(file string) string {
-	if uselessPrefix != "" && strings.HasPrefix(file, uselessPrefix) { // 違う環境でコンパイルした後、リンクすることは可能だと思うので。
-		return file[len(uselessPrefix):]
+	if uselessPref != "" && strings.HasPrefix(file, uselessPref) { // 違う環境でコンパイルした後、リンクすることは可能だと思うので。
+		return file[len(uselessPref):]
 	} else {
 		// /src/ の前までを GOPATH とみなす。
 		// GOPATH 自体に /src/ が含まれていると、そこまでしか除去できない。
