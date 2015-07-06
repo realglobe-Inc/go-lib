@@ -15,11 +15,12 @@
 package lock
 
 import (
-	"github.com/realglobe-Inc/go-lib/erro"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/erro"
 )
 
 func TestLockConcurrency(t *testing.T) {

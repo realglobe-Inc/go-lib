@@ -15,10 +15,11 @@
 package lock
 
 import (
-	"github.com/realglobe-Inc/go-lib/erro"
 	"os"
 	"syscall"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/erro"
 )
 
 // ロックファイル式のロック。

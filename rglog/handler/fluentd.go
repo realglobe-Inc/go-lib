@@ -17,11 +17,12 @@ package handler
 import (
 	"container/list"
 	"fmt"
-	"github.com/realglobe-Inc/go-lib/erro"
 	"io"
 	"net"
 	"os"
 	"strconv"
+
+	"github.com/realglobe-Inc/go-lib/erro"
 )
 
 // fluentd の in_forward にログを流す coreHandler。

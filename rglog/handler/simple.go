@@ -17,12 +17,13 @@ package handler
 import (
 	"bufio"
 	"fmt"
-	"github.com/realglobe-Inc/go-lib/erro"
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"io"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/realglobe-Inc/go-lib/erro"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 // 与えられた出力先に書き出すだけの Handler.

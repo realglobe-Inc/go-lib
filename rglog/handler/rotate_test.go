@@ -15,14 +15,15 @@
 package handler
 
 import (
-	"github.com/realglobe-Inc/go-lib/erro"
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/erro"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 func testFilePath() (path string, err error) {

@@ -15,10 +15,11 @@
 package handler
 
 import (
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 func testHandlerLevel(t *testing.T, hndl Handler) {

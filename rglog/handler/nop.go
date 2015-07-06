@@ -15,8 +15,9 @@
 package handler
 
 import (
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"sync"
+
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 // 何もしないハンドラ。

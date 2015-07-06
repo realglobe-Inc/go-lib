@@ -18,10 +18,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 // テストしたかったら fluentd サーバーを立ててから。

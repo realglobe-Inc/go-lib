@@ -16,10 +16,11 @@ package handler
 
 import (
 	"fmt"
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"log/syslog"
 	"testing"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 // 実際テストしたかったら true に。

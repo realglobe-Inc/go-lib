@@ -18,10 +18,11 @@ import (
 	"container/list"
 	"errors"
 	"fmt"
-	"github.com/realglobe-Inc/go-lib/erro"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/realglobe-Inc/go-lib/erro"
 )
 
 const (
