@@ -16,8 +16,9 @@ package handler
 
 import (
 	"fmt"
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"strconv"
+
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 type Formatter interface {

@@ -16,12 +16,13 @@ package handler
 
 import (
 	"fmt"
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"os"
 	"reflect"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 // ログの書き込みを別ゴルーチンで実行できるようにするために分離。

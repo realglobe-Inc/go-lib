@@ -15,14 +15,15 @@
 package logger
 
 import (
-	"github.com/realglobe-Inc/go-lib/rglog/handler"
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/rglog/handler"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 func testLoggerHandler(t *testing.T, mgr Manager) {

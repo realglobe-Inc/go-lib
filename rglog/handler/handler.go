@@ -15,8 +15,9 @@
 package handler
 
 import (
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 // ログの書き出し機。

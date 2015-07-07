@@ -16,12 +16,13 @@ package logger
 
 import (
 	"fmt"
-	"github.com/realglobe-Inc/go-lib/rglog/handler"
-	"github.com/realglobe-Inc/go-lib/rglog/level"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/realglobe-Inc/go-lib/rglog/handler"
+	"github.com/realglobe-Inc/go-lib/rglog/level"
 )
 
 // 全部ロックするログ。
